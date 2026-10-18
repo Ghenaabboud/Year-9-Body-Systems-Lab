@@ -126,6 +126,24 @@ ol.steps li::before{content:counter(s);font:700 .8rem/28px var(--mono);text-alig
 .sync[data-st="need"]{color:var(--bad)}
 .sync[data-st="saved"]{color:var(--good)}
 .quiz-note{font-size:.9rem;color:var(--muted)}
+.me{display:flex;flex-direction:column;align-items:flex-end;gap:4px;margin-left:auto}
+.me-id{display:flex;gap:8px;align-items:center}
+.me-name{font:800 1.05rem var(--display)}
+.me-cls{font:700 .8rem var(--mono);background:var(--accent);color:var(--accent-ink);padding:3px 8px;border-radius:6px}
+.me-btn{background:none;border:0;padding:0;color:var(--accent);font-weight:700;font-size:.85rem;cursor:pointer;text-decoration:underline}
+.gate{display:flex;justify-content:center;padding-block:10px 30px}
+.gate-card{width:min(520px,100%);background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:26px;display:flex;flex-direction:column;gap:16px;box-shadow:0 10px 30px -18px rgba(0,0,0,.35)}
+.gate-card h2{font-size:clamp(1.6rem,4vw,2.1rem);font-weight:800}
+.gate-sub{color:var(--muted)}
+.gate-field{display:flex;flex-direction:column;gap:6px}
+.gate-field label{font:700 .72rem var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.gate-field input{border:1.5px solid var(--line);border-radius:10px;padding:11px 13px;font-size:1.1rem;background:var(--surface-2)}
+.classes.big{flex-wrap:wrap;gap:8px}
+.classes.big .cls{padding:11px 16px;font-size:1.05rem;border-radius:10px}
+.gate-warn{font-size:.9rem;padding:8px 10px;border-radius:8px;background:var(--bad-soft);color:var(--bad)}
+.gate-err{color:var(--bad);font-weight:700;font-size:.92rem}
+.gate-err:empty{display:none}
+@media (max-width:620px){ .me{align-items:flex-start;margin-left:0} .ecg{display:none} }
 .who label{font:700 .72rem var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 .who input{border:0;border-bottom:2px solid var(--ink);background:transparent;padding:6px 2px;font-size:1.1rem;width:100%}
 .bar{height:10px;border-radius:99px;background:var(--line);overflow:hidden;margin-bottom:20px}
@@ -292,6 +310,11 @@ svg .air{fill:var(--panel)}
         <h1>Body Systems <span>Lab</span></h1>
         <p>Your body systems work together to keep you alive. Explore each one, tap the glowing dots to identify organs, then complete your organiser and test yourself.</p>
       </div>
+      <div class="me" id="me" hidden>
+        <div class="me-id"><span class="me-name" id="meName"></span><span class="me-cls" id="meCls"></span></div>
+        <p class="sync" id="sync" aria-live="polite"></p>
+        <button class="me-btn" id="meChange" type="button">Not you? Change</button>
+      </div>
       <svg class="ecg" viewBox="0 0 220 44" aria-hidden="true"><path d="M0 26 H62 L68 26 L72 18 L77 26 L84 26 L89 4 L96 40 L101 26 L114 26 Q121 16 128 26 H220"/></svg>
     </div>
     <nav class="tabs" role="tablist" aria-label="Sections">
@@ -303,6 +326,18 @@ svg .air{fill:var(--panel)}
 </header>
 
 <main class="wrap">
+  <section class="gate" id="gate" hidden aria-labelledby="gateTitle">
+    <div class="gate-card">
+      <p class="eyebrow">Before you start</p>
+      <h2 id="gateTitle">Who is exploring today?</h2>
+      <p class="gate-sub">Your teacher uses this to see your progress, so write your real name.</p>
+      <div class="gate-field"><label for="gName">Your name</label><input id="gName" type="text" maxlength="60" autocomplete="name" placeholder="First and last name"></div>
+      <div class="gate-field"><span class="who-lab" id="gClassLab">Your class</span><div class="classes big" id="gClass" role="radiogroup" aria-labelledby="gClassLab"></div></div>
+      <p class="gate-warn" id="gWarn" hidden>You are starting as a different student. The work saved on this device will be cleared here (your teacher keeps a copy).</p>
+      <p class="gate-err" id="gErr" aria-live="polite"></p>
+      <div class="row"><button class="btn" id="gStart" type="button">Start exploring</button><button class="btn ghost" id="gCancel" type="button" hidden>Cancel</button></div>
+    </div>
+  </section>
   <section id="explore" role="tabpanel" aria-labelledby="tab-explore">
     <div class="picker" id="picker"></div>
     <div class="explore">
@@ -322,13 +357,7 @@ svg .air{fill:var(--panel)}
         <h2>Systems of the Body organiser</h2>
         <p>Identify each system from its picture. Choose its name, tap its major organs and answer the function question. You get feedback straight away, and your answers save on this device.</p>
       </div>
-      <div class="who">
-        <div class="who-row">
-          <div class="who-field"><label for="studentName">Name</label><input id="studentName" type="text" autocomplete="name" maxlength="60" placeholder="First and last name"></div>
-          <div class="who-field"><span class="who-lab" id="classLab">Class</span><div class="classes" id="classPick" role="radiogroup" aria-labelledby="classLab"></div></div>
-        </div>
-        <p class="sync" id="sync" aria-live="polite"></p>
-      </div>
+      
     </div>
     <div class="bar" aria-hidden="true"><span id="bar"></span></div>
     <div class="cards" id="cards"></div>
@@ -616,7 +645,9 @@ function applyMotion(){
 
 /* ---------- tabs ---------- */
 const tabs=[...document.querySelectorAll('.tab')];
+let curTab='explore';
 function showTab(name){
+  curTab=name;
   tabs.forEach(t=>t.setAttribute('aria-selected',t.dataset.tab===name));
   ['explore','organiser','quiz'].forEach(id=>document.getElementById(id).hidden = id!==name);
   if(name==='quiz' && !quiz.started) startQuiz();
@@ -777,8 +808,7 @@ function refreshProgress(){
 function update(id){save(); paint(id); refreshProgress(); scheduleSync();}
 
 renderCards(); refreshProgress();
-const nameIn=document.getElementById('studentName'); nameIn.value=state.student||'';
-nameIn.addEventListener('input',()=>{state.student=nameIn.value; save(); identityUI(); scheduleSync();});
+
 
 cardsEl.addEventListener('change',e=>{
   const card=e.target.closest('.card'); if(!card) return; const id=card.dataset.id, c=state.cards[id];
@@ -856,7 +886,7 @@ function renderQ(){
     const pct=Math.round(quiz.score/Q.length*100);
     if(!quiz.recorded){ quiz.recorded=true; const qs=state.quiz; qs.last=quiz.score; qs.attempts=(qs.attempts||0)+1; qs.best=Math.max(qs.best??0,quiz.score); qs.of=Q.length; save(); scheduleSync(true); }
     const idOK=state.student.trim().length>1&&state.cls;
-    qBox.innerHTML=`<div class="qcard"><p class="eyebrow">Quick check complete</p><p class="score">${quiz.score}/${Q.length}</p><p>${pct>=80?'Excellent. You know your body systems well.':pct>=50?'Good start. Revisit the systems you missed in Explore, then try again.':'Go back to Explore and study each system, then have another go.'}</p><p class="quiz-note">${idOK?(ENDPOINT?'Your score has been sent to your teacher.':''):'Add your name and class on the Organiser tab so your teacher can see this score.'}</p><button class="btn" type="button" id="again">Try again</button></div>`;
+    qBox.innerHTML=`<div class="qcard"><p class="eyebrow">Quick check complete</p><p class="score">${quiz.score}/${Q.length}</p><p>${pct>=80?'Excellent. You know your body systems well.':pct>=50?'Good start. Revisit the systems you missed in Explore, then try again.':'Go back to Explore and study each system, then have another go.'}</p><p class="quiz-note">${idOK?(ENDPOINT?'Your score has been sent to your teacher.':''):'Add your name and class (top of the page) so your teacher can see this score.'}</p><button class="btn" type="button" id="again">Try again</button></div>`;
     document.getElementById('again').onclick=startQuiz; return;
   }
   const [q,opts,ans,ex]=Q[quiz.order[quiz.i]];
@@ -876,10 +906,37 @@ function renderQ(){
 const CLASSES=['9A','9B','9C','9D','9E'];
 const ENDPOINT=String(window.BSL_ENDPOINT||'').trim();
 if(!state.id){ state.id='s'+Date.now().toString(36)+Math.random().toString(36).slice(2,8); save(); }
-const classBox=document.getElementById('classPick');
-classBox.innerHTML=CLASSES.map(c=>`<button type="button" class="cls" role="radio" aria-checked="${state.cls===c}" data-c="${c}">${c}</button>`).join('');
-classBox.addEventListener('click',e=>{const b=e.target.closest('.cls'); if(!b) return; state.cls=b.dataset.c;
-  classBox.querySelectorAll('.cls').forEach(x=>x.setAttribute('aria-checked',x===b)); save(); identityUI(); scheduleSync(true);});
+const gate=document.getElementById('gate'), gName=document.getElementById('gName'), gClass=document.getElementById('gClass');
+let pickCls='';
+gClass.innerHTML=CLASSES.map(c=>`<button type="button" class="cls" role="radio" aria-checked="false" data-c="${c}">${c}</button>`).join('');
+function markCls(c){ pickCls=c; gClass.querySelectorAll('.cls').forEach(x=>x.setAttribute('aria-checked',x.dataset.c===c)); }
+gClass.addEventListener('click',e=>{const b=e.target.closest('.cls'); if(b){ markCls(b.dataset.c); document.getElementById('gErr').textContent=''; }});
+const norm=t=>t.trim().replace(/\s+/g,' ').toLowerCase();
+gName.addEventListener('input',()=>{ document.getElementById('gWarn').hidden = !(identityOK() && gName.value.trim() && norm(gName.value)!==norm(state.student)); document.getElementById('gErr').textContent=''; });
+function showGate(on){
+  gate.hidden=!on; document.querySelector('.tabs').hidden=on;
+  ['explore','organiser','quiz'].forEach(id=>document.getElementById(id).hidden = on || id!==curTab);
+  document.getElementById('gCancel').hidden=!(on&&identityOK());
+  if(on){ gName.value=state.student||''; markCls(state.cls||''); document.getElementById('gWarn').hidden=true; setTimeout(()=>gName.focus(),50); }
+}
+function updateMe(){ const ok=identityOK(); document.getElementById('me').hidden=!ok;
+  if(ok){ document.getElementById('meName').textContent=state.student.trim(); document.getElementById('meCls').textContent=state.cls; } }
+function startAs(){
+  const name=gName.value.trim().replace(/\s+/g,' '), err=document.getElementById('gErr');
+  if(name.length<2){ err.textContent='Type your name first.'; gName.focus(); return; }
+  if(!CLASSES.includes(pickCls)){ err.textContent='Tap your class.'; return; }
+  if(identityOK() && norm(name)!==norm(state.student)){
+    state.id='s'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+    SYS.forEach(s=>state.cards[s.id]=blankCard()); state.viewed=[]; state.quiz={best:null,last:null,attempts:0};
+    renderCards(); refreshProgress(); quiz.started=false;
+  }
+  state.student=name; state.cls=pickCls; save(); updateMe(); showGate(false); identityUI(); scheduleSync(true);
+  if(curTab==='explore' && cur && !state.viewed.includes(cur)){ state.viewed.push(cur); save(); }
+}
+document.getElementById('gStart').addEventListener('click',startAs);
+gName.addEventListener('keydown',e=>{ if(e.key==='Enter') startAs(); });
+document.getElementById('gCancel').addEventListener('click',()=>showGate(false));
+document.getElementById('meChange').addEventListener('click',()=>showGate(true));
 const SYNC_TEXT={need:'Add your name and choose your class so your teacher can see your progress.',saving:'Saving…',saved:'✓ Progress sent to your teacher',error:'Could not reach your teacher’s sheet. Your work is safe here and will send again shortly.',local:'Your progress saves on this device.'};
 function setSync(st){const el=document.getElementById('sync'); el.dataset.st=st; el.textContent=SYNC_TEXT[st]||'';}
 function identityOK(){return state.student.trim().length>1 && CLASSES.includes(state.cls);}
@@ -908,7 +965,8 @@ identityUI();
 selectSystem(byId[state.last]?state.last:'circulatory');
 const h=(location.hash||'').slice(1); if(['organiser','quiz'].includes(h)) showTab(h);
 applyMotion();
-if(identityOK()) scheduleSync(true);
+updateMe();
+if(identityOK()) scheduleSync(true); else showGate(true);
 </script>
 </body>
 </html>
