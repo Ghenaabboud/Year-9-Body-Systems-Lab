@@ -99,6 +99,13 @@ main{padding-block:22px 48px}
 .organ.nodot{border-style:dashed}
 .organ-detail{min-height:3em;padding:10px 12px;border-radius:9px;background:var(--surface-2);max-width:66ch}
 .organ-detail b{font-family:var(--display)}
+/* muscle types */
+.mtypes{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.mtype{margin:0;border:1.5px solid var(--line);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:8px;align-items:center;background:var(--surface-2);transition:border-color .2s,box-shadow .2s}
+.mtype img{height:min(380px,60vh);width:auto;max-width:100%;border-radius:8px}
+.mtype figcaption{font-size:.9rem;align-self:stretch}
+.mtype.on{border-color:var(--sys);box-shadow:0 0 0 3px color-mix(in srgb,var(--sys) 30%,transparent)}
+@media (max-width:480px){ .mtype img{height:280px} }
 ol.steps{margin:0;padding:0;list-style:none;counter-reset:s;display:flex;flex-direction:column;gap:8px}
 ol.steps li{counter-increment:s;display:grid;grid-template-columns:28px 1fr;gap:10px;align-items:start;max-width:66ch}
 ol.steps li::before{content:counter(s);font:700 .8rem/28px var(--mono);text-align:center;width:28px;height:28px;border-radius:50%;background:color-mix(in srgb,var(--sys) 18%,var(--surface));color:var(--ink)}
@@ -602,6 +609,14 @@ excretory: u => {
 };
 
 const EXTRA = {
+types: `<div class="block" id="mtypes"><h3>Where are cardiac and smooth muscle?</h3>
+  <p>Both are <b>involuntary</b>: they work without you thinking about them. Tap a picture's name above, or compare them here.</p>
+  <div class="mtypes">
+   <figure class="mtype" id="fig-cardiac"><img src="assets/cardiac-muscle.webp" alt="Body outline with the heart highlighted: cardiac muscle is found only in the heart" width="300" height="973" loading="lazy">
+    <figcaption><b>Cardiac muscle</b> is found only in the <b>heart</b>. It contracts in a steady rhythm your whole life and never gets tired.</figcaption></figure>
+   <figure class="mtype" id="fig-smooth"><img src="assets/smooth-muscle.webp" alt="Body outline with the oesophagus, stomach, intestines, bladder and blood vessels highlighted: places with smooth muscle" width="300" height="968" loading="lazy">
+    <figcaption><b>Smooth muscle</b> lines hollow organs: the <b>oesophagus, stomach, intestines, bladder</b> and <b>blood vessels</b>. It squeezes slowly to move things along.</figcaption></figure>
+  </div></div>`,
 arm: `<svg viewBox="0 0 260 150" role="img" aria-label="Animated arm: biceps contracts and pulls the forearm up while the triceps relaxes">
   <circle class="bf" cx="36" cy="50" r="11"/>
   <path class="be" d="M36 50 L140 62" stroke-width="11"/><path class="bo" d="M36 50 L140 62" stroke-width="9"/>
@@ -677,6 +692,7 @@ function selectSystem(id){
    <div class="block"><h3>Function</h3><p class="lede">${s.func}</p></div>
    <div class="block"><h3>Major organs</h3><div class="organs" id="organs">${s.parts.map((p,i)=>`<button type="button" class="organ${p[1]==null?' nodot':''}" data-part="${i}" aria-pressed="false">${p[0]}</button>`).join('')}</div><div class="organ-detail" id="organDetail" aria-live="polite">Choose an organ to find out what it does.${s.parts.some(p=>p[1]==null)?' Dashed names are not shown on the diagram.':''}</div></div>
    <div class="block"><h3>How it works</h3><ol class="steps">${s.steps.map(t=>`<li><span>${t}</span></li>`).join('')}</ol></div>
+   ${s.id==='muscular'?EXTRA.types:''}
    ${s.extra?`<div class="block zoom"><h3>${s.extra==='arm'?'Zoom in: how muscles move bones':'Zoom in: a neuron sending an impulse'}</h3>${EXTRA[s.extra]}</div>`:''}
    <div class="two"><div class="block note"><p class="eyebrow">Key idea</p><p>${s.tip}</p></div><div class="block note"><p class="eyebrow">Did you know?</p><p>${s.fact}</p></div></div>
    <div class="block"><p class="eyebrow">Stretch challenge</p><p>${s.stretch}</p></div>
@@ -691,6 +707,10 @@ function showPart(i){
   document.querySelectorAll('#dia .hot').forEach(h=>h.classList.toggle('on',h.dataset.part==i));
   document.querySelectorAll('#organs .organ').forEach(b=>b.setAttribute('aria-pressed',b.dataset.part==i));
   document.getElementById('organDetail').innerHTML=`<b>${p[0]}.</b> ${p[3]}`;
+  const figMap={'Cardiac muscle':'fig-cardiac','Smooth muscle':'fig-smooth'};
+  document.querySelectorAll('.mtype').forEach(f=>f.classList.toggle('on',f.id===figMap[p[0]]));
+  if(figMap[p[0]]){ const f=document.getElementById(figMap[p[0]]); f&&f.scrollIntoView?.({behavior:still?'auto':'smooth',block:'nearest'});
+    document.getElementById('specCap').innerHTML=`<b>${p[0]}</b> is shown in the picture below. Look for it in the body.`; return; }
   document.getElementById('specCap').innerHTML= p[1]==null ? `<b>${p[0]}</b> is not drawn on this diagram.` : `You found the <b>${p[0].toLowerCase()}</b>.`;
 }
 document.getElementById('dia').addEventListener('click',e=>{const h=e.target.closest('.hot'); if(h) showPart(+h.dataset.part);});
