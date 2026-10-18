@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Body Systems Teacher Panel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: teacher console — class filter bar, summary strip, system heat bars, then a wide student grid */
+:root{
+  --bg:#EAF1EE; --surface:#FFFFFF; --surface-2:#F3F7F5; --ink:#122629; --muted:#526a6c; --line:#CFDDD8;
+  --accent:#1F7A4D; --accent-ink:#FFFFFF; --accent-soft:#D6EDE1;
+  --good:#1D7A4B; --good-soft:#DDF2E5; --part:#A86B0C; --part-soft:#FBEED3; --bad:#B8382F; --bad-soft:#FBE4E1;
+  --display:'Bricolage Grotesque','Trebuchet MS',system-ui,sans-serif;
+  --body:'Atkinson Hyperlegible','Segoe UI',system-ui,sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#0D191A; --surface:#142426; --surface-2:#1A2D2F; --ink:#E3EEEB; --muted:#95ABA8; --line:#2A4143;
+  --accent:#4CC08A; --accent-ink:#06210F; --accent-soft:#1E3F31;
+  --good:#5BD197; --good-soft:#173A2A; --part:#E9B45A; --part-soft:#3A2E16; --bad:#F2857C; --bad-soft:#40201D; color-scheme:dark}}
+*{box-sizing:border-box}
+html{background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 var(--body)}
+[hidden]{display:none!important}
+.wrap{max-width:1280px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2{font-family:var(--display);line-height:1.1;margin:0;text-wrap:balance}
+p{margin:0}
+button,input{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.eyebrow{font:700 .72rem/1 var(--mono);letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+header{padding-block:22px 18px;border-bottom:2px solid var(--line)}
+.brand{display:flex;flex-wrap:wrap;gap:10px 24px;align-items:flex-end;justify-content:space-between}
+.brand h1{font-size:clamp(1.8rem,4vw,2.6rem);font-weight:800;letter-spacing:-.02em;margin-top:6px}
+.brand h1 span{color:var(--accent)}
+.brand a{color:var(--accent);font-weight:700}
+main{padding-block:22px 48px;display:flex;flex-direction:column;gap:20px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px}
+.lock{max-width:440px;display:flex;flex-direction:column;gap:12px}
+.lock input{border:1.5px solid var(--line);border-radius:9px;padding:10px 12px;background:var(--surface-2);font-size:1.05rem}
+.btn{border:0;background:var(--accent);color:var(--accent-ink);border-radius:9px;padding:9px 16px;font-weight:700;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+.err{color:var(--bad);font-weight:700}
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.seg{display:flex;flex-wrap:wrap;gap:4px}
+.seg button{border:1.5px solid var(--line);background:var(--surface);border-radius:8px;padding:6px 11px;font:700 .85rem var(--mono);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.seg small{opacity:.7;font-weight:500;margin-left:4px}
+.search{border:1.5px solid var(--line);border-radius:8px;padding:6px 10px;background:var(--surface);min-width:0;flex:1 1 160px;max-width:260px}
+.stamp{font:500 .78rem var(--mono);color:var(--muted);margin-left:auto}
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.tile b{font:800 1.9rem/1.1 var(--display);font-variant-numeric:tabular-nums}
+.tile span{color:var(--muted);font-size:.86rem}
+.sysbars{display:flex;flex-direction:column;gap:9px}
+.sysbar{display:grid;grid-template-columns:110px minmax(0,1fr) 150px;gap:12px;align-items:center;font-size:.9rem}
+.sysbar .track{height:14px;border-radius:99px;background:var(--surface-2);border:1px solid var(--line);overflow:hidden;display:flex}
+.sysbar .done{background:var(--good)} .sysbar .part{background:var(--part);opacity:.55}
+.sysbar .meta{font:500 .78rem var(--mono);color:var(--muted);font-variant-numeric:tabular-nums}
+.key{display:flex;gap:14px;flex-wrap:wrap;font-size:.8rem;color:var(--muted)}
+.key i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+h2{font-size:1.25rem;font-weight:800;margin-bottom:12px}
+.tablebox{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:900px;font-variant-numeric:tabular-nums}
+th,td{padding:9px 10px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font:700 .72rem var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:var(--surface-2);position:sticky;top:0;cursor:pointer;user-select:none}
+th[aria-sort]::after{content:" ↕";opacity:.4}
+th[aria-sort="ascending"]::after{content:" ↑";opacity:1}
+th[aria-sort="descending"]::after{content:" ↓";opacity:1}
+th.c,td.c{text-align:center}
+tbody tr.row{cursor:pointer}
+tbody tr.row:hover{background:var(--surface-2)}
+.st{display:inline-grid;place-items:center;min-width:34px;height:24px;border-radius:6px;font:700 .75rem var(--mono)}
+.st.d{background:var(--good-soft);color:var(--good)}
+.st.p{background:var(--part-soft);color:var(--part)}
+.st.n{color:var(--muted)}
+.name{font-weight:700}
+.detail td{background:var(--surface-2);white-space:normal}
+.dgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+.dcell{background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:10px;font-size:.85rem;display:flex;flex-direction:column;gap:3px}
+.dcell b{font-family:var(--display);font-size:.95rem}
+.ok{color:var(--good)} .no{color:var(--bad)}
+.empty{padding:28px;text-align:center;color:var(--muted)}
+@media (max-width:760px){ .tiles{grid-template-columns:repeat(2,minmax(0,1fr))} .sysbar{grid-template-columns:90px minmax(0,1fr)} .sysbar .meta{grid-column:2} .stamp{margin-left:0;width:100%} }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap brand">
+    <div><p class="eyebrow">Year 9 Science · Body Systems Lab</p><h1>Teacher <span>panel</span></h1></div>
+    <a href="./">Open the student page →</a>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="card lock" id="lock">
+    <h2 style="margin:0">Sign in to see results</h2>
+    <p>Enter the teacher passcode shared by the Head of Science.</p>
+    <label for="pass" class="eyebrow">Passcode</label>
+    <input id="pass" type="password" autocomplete="current-password">
+    <button class="btn" id="open" type="button">Open results</button>
+    <p class="err" id="lockErr" aria-live="polite"></p>
+  </section>
+
+  <section id="dash" hidden>
+    <div style="display:flex;flex-direction:column;gap:20px">
+      <div class="toolbar">
+        <div class="seg" id="classSeg" role="group" aria-label="Filter by class"></div>
+        <input class="search" id="search" type="search" placeholder="Find a student" aria-label="Find a student">
+        <button class="btn ghost" id="refresh" type="button">Refresh</button>
+        <button class="btn ghost" id="csv" type="button">Download CSV</button>
+        <span class="stamp" id="stamp"></span>
+      </div>
+      <div class="tiles" id="tiles"></div>
+      <div class="card">
+        <h2>Progress by system</h2>
+        <div class="sysbars" id="sysbars"></div>
+        <div class="key" style="margin-top:12px"><span><i style="background:var(--good)"></i>Completed</span><span><i style="background:var(--part);opacity:.55"></i>Started, not finished</span><span>Mistakes = wrong taps across names, organs and function questions</span></div>
+      </div>
+      <div>
+        <h2>Students</h2>
+        <div class="tablebox"><table><thead id="thead"></thead><tbody id="tbody"></tbody></table></div>
+        <p class="eyebrow" style="margin-top:8px;text-transform:none;letter-spacing:0">Tap a student to see their answers system by system. ✓ = complete · 2/3 = parts done (name, organs, function) · · = not started</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script src="config.js"></script>
+<script>
+const ENDPOINT=String(window.BSL_ENDPOINT||'').trim();
+const CLASSES=['9A','9B','9C','9D','9E'];
+const SYSTEMS=[['circulatory','Circulatory','Circ'],['muscular','Muscular','Musc'],['digestive','Digestive','Dig'],['skeletal','Skeletal','Skel'],['nervous','Nervous','Nerv'],['excretory','Excretory','Excr'],['respiratory','Respiratory','Resp']];
+const FMT={mc:'multiple choice',tf:'true/false',fill:'fill the gaps',type:'written'};
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let rows=[], cls='All', q='', sortKey='name', sortDir=1, open=null, key='';
+
+if(!ENDPOINT){ document.getElementById('lock').innerHTML='<h2 style="margin:0">Not connected yet</h2><p>The Google Sheet link has not been added to <code>config.js</code>. Once it is, results will appear here.</p>'; }
+try{ key=sessionStorage.getItem('bslKey')||''; }catch(e){}
+const passIn=document.getElementById('pass');
+document.getElementById('open').onclick=()=>{ key=passIn.value.trim(); load(true); };
+passIn.addEventListener('keydown',e=>{ if(e.key==='Enter'){ key=passIn.value.trim(); load(true); } });
+if(key&&ENDPOINT) load(false);
+
+async function load(fromLock){
+  const err=document.getElementById('lockErr');
+  if(!key){ err.textContent='Enter the passcode.'; return; }
+  err.textContent=fromLock?'Opening…':'';
+  try{
+    const r=await fetch(ENDPOINT+(ENDPOINT.includes('?')?'&':'?')+'key='+encodeURIComponent(key)+'&t='+Date.now());
+    const j=await r.json();
+    if(!j.ok){ err.textContent=j.error==='Wrong passcode'?'That passcode is not right. Check with the Head of Science.':(j.error||'Could not load results.'); document.getElementById('lock').hidden=false; document.getElementById('dash').hidden=true; return; }
+    try{ sessionStorage.setItem('bslKey',key); }catch(e){}
+    rows=j.rows||[]; err.textContent='';
+    document.getElementById('lock').hidden=true; document.getElementById('dash').hidden=false;
+    document.getElementById('stamp').textContent='Updated '+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+    render();
+  }catch(e){ err.textContent='Could not reach the results sheet. Check your internet connection and try again.'; }
+}
+document.getElementById('refresh').onclick=()=>load(false);
+setInterval(()=>{ if(!document.hidden && !document.getElementById('dash').hidden) load(false); },60000);
+document.getElementById('search').addEventListener('input',e=>{q=e.target.value.trim().toLowerCase(); render();});
+
+function parts(s){ if(!s) return 0; return (s.named?1:0)+((s.found>=s.need&&s.need)?1:0)+(s.fn?1:0); }
+function ago(iso){ if(!iso) return '—'; const m=Math.round((Date.now()-new Date(iso))/60000); if(m<1) return 'just now'; if(m<60) return m+' min ago'; const h=Math.round(m/60); if(h<24) return h+' h ago'; const d=Math.round(h/24); return d+' day'+(d>1?'s':'')+' ago'; }
+function quizOf(r){ return r.quiz&&r.quiz.of ? r.quiz.of : 11; }
+function filtered(){ return rows.filter(r=>(cls==='All'||r.cls===cls)&&(!q||String(r.name).toLowerCase().includes(q))); }
+
+function render(){
+  const counts={All:rows.length}; CLASSES.forEach(c=>counts[c]=rows.filter(r=>r.cls===c).length);
+  document.getElementById('classSeg').innerHTML=['All',...CLASSES].map(c=>`<button type="button" data-c="${c}" aria-pressed="${cls===c}">${c==='All'?'All classes':c}<small>${counts[c]}</small></button>`).join('');
+  const list=filtered(), n=list.length, total=SYSTEMS.length;
+  const finished=list.filter(r=>(r.done||0)>=total).length;
+  const quizzed=list.filter(r=>r.quiz&&r.quiz.best!=null);
+  const avgQuiz=quizzed.length?(quizzed.reduce((a,r)=>a+r.quiz.best/quizOf(r),0)/quizzed.length*100):null;
+  const sysStats=SYSTEMS.map(([k,label])=>{ const ss=list.map(r=>(r.systems||{})[k]).filter(Boolean);
+    const done=ss.filter(s=>s.done).length, started=ss.filter(s=>s.started&&!s.done).length, mist=ss.reduce((a,s)=>a+(s.mistakes||0),0);
+    return {k,label,done,started,avgM:ss.length?mist/Math.max(1,ss.filter(s=>s.started).length):0}; });
+  const hardest=[...sysStats].filter(s=>s.done+s.started>0).sort((a,b)=>b.avgM-a.avgM)[0];
+  document.getElementById('tiles').innerHTML=[
+    [n,cls==='All'?'students across all classes':'students in '+cls],
+    [`${finished}<small style="font-size:1rem;color:var(--muted)">/${n}</small>`,'finished the whole organiser'],
+    [avgQuiz==null?'—':Math.round(avgQuiz)+'%','average best quiz score'],
+    [hardest?hardest.label:'—','most mistakes per student']
+  ].map(([b,s])=>`<div class="tile"><b>${b}</b><span>${s}</span></div>`).join('');
+  document.getElementById('sysbars').innerHTML=sysStats.map(s=>{const d=n?s.done/n*100:0, p=n?s.started/n*100:0;
+    return `<div class="sysbar"><span>${s.label}</span><div class="track" role="img" aria-label="${s.label}: ${s.done} of ${n} completed, ${s.started} in progress"><span class="done" style="width:${d}%"></span><span class="part" style="width:${p}%"></span></div><span class="meta">${s.done}/${n} done · ${s.avgM.toFixed(1)} mistakes</span></div>`;}).join('');
+  const cols=[['name','Student'],['cls','Class'],['viewed','Explored'],...SYSTEMS.map(s=>[s[0],s[2],1]),['done','Done'],['quiz','Quiz best'],['mistakes','Mistakes'],['updated','Last active']];
+  document.getElementById('thead').innerHTML='<tr>'+cols.map(([k,l,c])=>`<th class="${c||['viewed','done','quiz','mistakes'].includes(k)?'c':''}" data-k="${k}" aria-sort="${sortKey===k?(sortDir>0?'ascending':'descending'):'none'}" title="Sort by ${l}">${l}</th>`).join('')+'</tr>';
+  const val=(r,k)=>{ if(k==='quiz') return r.quiz&&r.quiz.best!=null?r.quiz.best:-1; if(SYSTEMS.some(s=>s[0]===k)){const s=(r.systems||{})[k]; return s?(s.done?4:parts(s)):-1;} if(k==='name'||k==='cls') return String(r[k]||'').toLowerCase(); if(k==='updated') return r.updated||''; return r[k]||0; };
+  list.sort((a,b)=>{const x=val(a,sortKey),y=val(b,sortKey); return (x>y?1:x<y?-1:0)*sortDir || String(a.name).localeCompare(String(b.name));});
+  const tb=document.getElementById('tbody');
+  if(!n){ tb.innerHTML=`<tr><td colspan="${cols.length}" class="empty">${rows.length?'No students match this filter.':'No results yet. Students appear here as soon as they type their name and choose their class.'}</td></tr>`; return; }
+  tb.innerHTML=list.map(r=>{
+    const cells=SYSTEMS.map(([k])=>{const s=(r.systems||{})[k]; if(!s||!s.started) return `<td class="c"><span class="st n">·</span></td>`; if(s.done) return `<td class="c"><span class="st d" title="Complete">✓</span></td>`; return `<td class="c"><span class="st p" title="${parts(s)} of 3 parts done">${parts(s)}/3</span></td>`;}).join('');
+    const quiz=r.quiz&&r.quiz.best!=null?`${r.quiz.best}/${quizOf(r)}`:'—';
+    const row=`<tr class="row" data-id="${esc(r.id)}" tabindex="0" aria-expanded="${open===r.id}"><td class="name">${esc(r.name)}</td><td>${esc(r.cls)}</td><td class="c">${r.viewed||0}/${SYSTEMS.length}</td>${cells}<td class="c">${r.done||0}/${SYSTEMS.length}</td><td class="c">${quiz}</td><td class="c">${r.mistakes||0}</td><td>${ago(r.updated)}</td></tr>`;
+    return row+(open===r.id?`<tr class="detail"><td colspan="${cols.length}">${detail(r)}</td></tr>`:'');
+  }).join('');
+}
+function detail(r){
+  const qz=r.quiz||{};
+  return `<div class="dgrid">${SYSTEMS.map(([k,label])=>{const s=(r.systems||{})[k];
+    if(!s||!s.started) return `<div class="dcell"><b>${label}</b><span style="color:var(--muted)">Not started</span></div>`;
+    return `<div class="dcell"><b>${label}${s.done?' <span class="ok">✓</span>':''}</b>
+      <span class="${s.named?'ok':'no'}">${s.named?'✓':'✗'} Named the system</span>
+      <span class="${s.found>=s.need?'ok':'no'}">${s.found>=s.need?'✓':'✗'} Organs ${s.found}/${s.need}</span>
+      ${s.wrongOrgans&&s.wrongOrgans.length?`<span>Wrong organs tapped: ${s.wrongOrgans.map(esc).join(', ')}</span>`:''}
+      <span class="${s.fn?'ok':'no'}">${s.fn?'✓':'✗'} Function (${FMT[s.fmt]||s.fmt})</span>
+      <span>Mistakes: ${s.mistakes||0}</span></div>`;}).join('')}
+    <div class="dcell"><b>Quick check</b><span>Best: ${qz.best??'—'} · Last: ${qz.last??'—'}</span><span>Attempts: ${qz.attempts||0}</span></div></div>`;
+}
+document.getElementById('classSeg').addEventListener('click',e=>{const b=e.target.closest('button'); if(b){cls=b.dataset.c; render();}});
+document.getElementById('thead').addEventListener('click',e=>{const th=e.target.closest('th'); if(!th) return; const k=th.dataset.k; if(sortKey===k) sortDir*=-1; else {sortKey=k; sortDir=k==='name'||k==='cls'?1:-1;} render();});
+const tbody=document.getElementById('tbody');
+tbody.addEventListener('click',e=>{const tr=e.target.closest('tr.row'); if(tr){open=open===tr.dataset.id?null:tr.dataset.id; render();}});
+tbody.addEventListener('keydown',e=>{const tr=e.target.closest('tr.row'); if(tr&&(e.key==='Enter'||e.key===' ')){e.preventDefault(); open=open===tr.dataset.id?null:tr.dataset.id; render(); tbody.querySelector(`tr.row[data-id="${CSS.escape(tr.dataset.id)}"]`)?.focus();}});
+document.getElementById('csv').onclick=()=>{
+  const head=['Name','Class','Systems explored','Systems done',...SYSTEMS.map(s=>s[1]),'Quiz best','Quiz last','Quiz attempts','Mistakes','Last active'];
+  const lines=[head,...filtered().map(r=>[r.name,r.cls,r.viewed||0,r.done||0,...SYSTEMS.map(([k])=>{const s=(r.systems||{})[k]; return !s||!s.started?'':s.done?'Done':parts(s)+'/3';}),r.quiz?.best??'',r.quiz?.last??'',r.quiz?.attempts||0,r.mistakes||0,r.updated||''])];
+  const csv=lines.map(l=>l.map(v=>{let t=String(v); if(/^[=+\-@]/.test(t)) t="'"+t; return /[",\n]/.test(t)?'"'+t.replace(/"/g,'""')+'"':t;}).join(',')).join('\n');
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob(['﻿'+csv],{type:'text/csv'})); a.download=`body-systems-${cls==='All'?'all':cls}.csv`; document.body.appendChild(a); a.click(); a.remove();
+};
+</script>
+</body>
+</html>

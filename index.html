@@ -1,0 +1,914 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Body Systems Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: lab-bench app — tab bar, specimen panel (animated figure) beside a study sheet; organiser as a grid of figure cards */
+:root{
+  --bg:#EAF1EE; --surface:#FFFFFF; --surface-2:#F3F7F5; --panel:#E2ECE8; --grid:rgba(31,122,77,.07);
+  --ink:#122629; --muted:#526a6c; --line:#CFDDD8;
+  --accent:#1F7A4D; --accent-ink:#FFFFFF; --accent-soft:#D6EDE1;
+  --good:#1D7A4B; --good-soft:#DDF2E5; --bad:#B8382F; --bad-soft:#FBE4E1; --hot:#1F7A4D;
+  --skin:#F2CBAA; --skin-edge:#C99673; --bone:#F1E8D4; --bone-edge:#A7977A;
+  --display:'Bricolage Grotesque', 'Trebuchet MS', system-ui, sans-serif;
+  --body:'Atkinson Hyperlegible', 'Segoe UI', system-ui, sans-serif;
+  --mono:'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0D191A; --surface:#142426; --surface-2:#1A2D2F; --panel:#1B3033; --grid:rgba(76,192,138,.06);
+  --ink:#E3EEEB; --muted:#95ABA8; --line:#2A4143;
+  --accent:#4CC08A; --accent-ink:#06210F; --accent-soft:#1E3F31;
+  --good:#5BD197; --good-soft:#173A2A; --bad:#F2857C; --bad-soft:#40201D; --hot:#5BD197;
+  --skin:#D8A988; --skin-edge:#9C6E50; --bone:#E7DEC8; --bone-edge:#8F826A; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0D191A; --surface:#142426; --surface-2:#1A2D2F; --panel:#1B3033; --grid:rgba(76,192,138,.06);
+  --ink:#E3EEEB; --muted:#95ABA8; --line:#2A4143;
+  --accent:#4CC08A; --accent-ink:#06210F; --accent-soft:#1E3F31;
+  --good:#5BD197; --good-soft:#173A2A; --bad:#F2857C; --bad-soft:#40201D; --hot:#5BD197;
+  --skin:#D8A988; --skin-edge:#9C6E50; --bone:#E7DEC8; --bone-edge:#8F826A; color-scheme:dark}
+
+*{box-sizing:border-box}
+:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{background:var(--bg)}
+body{margin:0}
+img{max-width:100%}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font:16px/1.55 var(--body);}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--display);line-height:1.1;text-wrap:balance;margin:0}
+p{margin:0}
+button,select,textarea,input{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.eyebrow{font:700 .72rem/1 var(--mono);letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+
+/* header */
+header.top{padding-block:22px 0}
+.brand{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px}
+.brand h1{font-size:clamp(2rem,5vw,3.1rem);font-weight:800;letter-spacing:-.02em}
+.brand h1 span{color:var(--accent)}
+.brand p{color:var(--muted);max-width:52ch;margin-top:6px}
+.ecg{width:220px;max-width:100%;height:44px;flex:0 1 220px}
+.ecg path{fill:none;stroke:var(--accent);stroke-width:2.2;stroke-linejoin:round;stroke-dasharray:420;animation:ecg 2.6s linear infinite}
+@keyframes ecg{0%{stroke-dashoffset:420}70%{stroke-dashoffset:0;opacity:1}100%{stroke-dashoffset:0;opacity:0}}
+.tabs{display:flex;gap:6px;margin-top:18px;border-bottom:2px solid var(--line);overflow-x:auto}
+.tab{background:none;border:0;padding:10px 14px;font:700 1rem var(--display);color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap;display:flex;gap:8px;align-items:center}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.tab .count{font:700 .72rem var(--mono);background:var(--accent-soft);color:var(--accent);padding:2px 7px;border-radius:99px}
+main{padding-block:22px 48px}
+
+/* system picker */
+.picker{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-bottom:18px}
+.pick{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1.5px solid var(--line);background:var(--surface);border-radius:10px;cursor:pointer;text-align:left;font-weight:700;font-size:.95rem}
+.pick:hover{border-color:var(--sys)}
+.pick .sw{width:12px;height:12px;border-radius:50%;background:var(--sys);flex:none}
+.pick[aria-pressed="true"]{background:color-mix(in srgb,var(--sys) 16%,var(--surface));border-color:var(--sys)}
+
+/* explore */
+.explore{display:grid;grid-template-columns:minmax(280px,400px) minmax(0,1fr);gap:22px;align-items:start}
+.specimen{position:sticky;top:12px;background:var(--panel);background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:20px 20px;border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.spec-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.spec-head .eyebrow{color:var(--ink)}
+.pause{border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:4px 12px;font:700 .75rem var(--mono);cursor:pointer}
+.dia-wrap{display:flex;justify-content:center}
+.dia-wrap svg.dia{height:min(520px,68vh);width:auto;max-width:100%}
+.spec-cap{min-height:3.2em;font-size:.92rem;color:var(--muted);text-align:center}
+.spec-cap b{color:var(--ink)}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;justify-content:center;font-size:.8rem;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+
+.info{display:flex;flex-direction:column;gap:16px;min-width:0}
+.info h2{font-size:clamp(1.9rem,4vw,2.6rem);font-weight:800;letter-spacing:-.015em}
+.info h2 small{display:block;font:700 .75rem var(--mono);letter-spacing:.09em;text-transform:uppercase;color:var(--sys);margin-bottom:8px}
+.lede{font-size:1.08rem;max-width:62ch}
+.block{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;gap:10px}
+.block h3{font-size:1.15rem}
+.think{background:color-mix(in srgb,var(--sys) 11%,var(--surface));border-color:color-mix(in srgb,var(--sys) 40%,var(--line))}
+.think .q{font-size:1.06rem;font-weight:700;max-width:60ch}
+.think .a{max-width:62ch}
+.btn{border:0;background:var(--accent);color:var(--accent-ink);border-radius:9px;padding:9px 16px;font-weight:700;cursor:pointer;align-self:flex-start}
+.btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+.btn.ghost:hover{border-color:var(--accent)}
+.organs{display:flex;flex-wrap:wrap;gap:8px}
+.organ{border:1.5px solid var(--line);background:var(--surface-2);border-radius:99px;padding:6px 13px;cursor:pointer;font-weight:700;font-size:.92rem}
+.organ[aria-pressed="true"]{background:var(--sys);border-color:var(--sys);color:#fff}
+.organ.nodot{border-style:dashed}
+.organ-detail{min-height:3em;padding:10px 12px;border-radius:9px;background:var(--surface-2);max-width:66ch}
+.organ-detail b{font-family:var(--display)}
+ol.steps{margin:0;padding:0;list-style:none;counter-reset:s;display:flex;flex-direction:column;gap:8px}
+ol.steps li{counter-increment:s;display:grid;grid-template-columns:28px 1fr;gap:10px;align-items:start;max-width:66ch}
+ol.steps li::before{content:counter(s);font:700 .8rem/28px var(--mono);text-align:center;width:28px;height:28px;border-radius:50%;background:color-mix(in srgb,var(--sys) 18%,var(--surface));color:var(--ink)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.note{font-size:.95rem}
+.note.tip{border-left:0}
+.zoom svg{width:100%;height:auto;max-height:200px}
+.navrow{display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between}
+
+/* organiser */
+.org-head{display:flex;flex-wrap:wrap;gap:14px 24px;align-items:flex-end;justify-content:space-between;margin-bottom:18px}
+.org-head h2{font-size:clamp(1.6rem,3.5vw,2.2rem);font-weight:800}
+.org-head p{color:var(--muted);max-width:60ch;margin-top:6px}
+.who{display:flex;flex-direction:column;gap:8px;min-width:min(420px,100%)}
+.who-row{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end}
+.who-field{display:flex;flex-direction:column;gap:4px;flex:1 1 180px;min-width:0}
+.who-field:last-child{flex:0 0 auto}
+.who-lab{font:700 .72rem var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.classes{display:flex;gap:4px}
+.cls{border:1.5px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 10px;font:700 .9rem var(--mono);cursor:pointer}
+.cls:hover{border-color:var(--accent)}
+.cls[aria-checked="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.sync{font-size:.86rem;font-weight:700;color:var(--muted)}
+.sync:empty{display:none}
+.sync[data-st="need"]{color:var(--bad)}
+.sync[data-st="saved"]{color:var(--good)}
+.quiz-note{font-size:.9rem;color:var(--muted)}
+.who label{font:700 .72rem var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.who input{border:0;border-bottom:2px solid var(--ink);background:transparent;padding:6px 2px;font-size:1.1rem;width:100%}
+.bar{height:10px;border-radius:99px;background:var(--line);overflow:hidden;margin-bottom:20px}
+.bar span{display:block;height:100%;background:var(--accent);width:0;transition:width .4s}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:16px}
+.card{background:var(--surface);border:1.5px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.card.done{border-color:var(--sys)}
+.card-top{display:flex;justify-content:space-between;align-items:center}
+.fig{font:700 .78rem var(--mono);letter-spacing:.08em;text-transform:uppercase}
+.pill{font:700 .7rem var(--mono);padding:3px 9px;border-radius:99px;background:var(--surface-2);color:var(--muted)}
+.pill.prog{background:var(--accent-soft);color:var(--accent)}
+.pill.ok{background:var(--good-soft);color:var(--good)}
+.mini{background:var(--panel);border-radius:10px;display:flex;justify-content:center;padding:8px}
+.mini svg{height:220px;width:auto;max-width:100%}
+.card label,.card legend{font-weight:700;font-size:.9rem}
+.card legend span{font-weight:400;color:var(--muted)}
+.card select,.card textarea{width:100%;border:1.5px solid var(--line);border-radius:8px;background:var(--surface-2);padding:8px 10px}
+.card textarea{resize:vertical;min-height:76px}
+.card fieldset{border:0;padding:0;margin:0;display:flex;flex-direction:column;gap:8px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1.5px solid var(--line);background:var(--surface-2);border-radius:99px;padding:4px 11px;font-size:.86rem;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chip.right{background:var(--good);border-color:var(--good);color:#fff}
+.chip.wrong{background:var(--bad);border-color:var(--bad);color:#fff}
+.chip.missed{border-color:var(--good);border-style:dashed}
+.row{display:flex;flex-wrap:wrap;gap:8px}
+.row .btn{padding:7px 13px;font-size:.9rem}
+.fb{display:flex;flex-direction:column;gap:4px;font-size:.9rem}
+.fb p{padding:6px 10px;border-radius:8px}
+.fb .y{background:var(--good-soft);color:var(--good)}
+.fb .n{background:var(--bad-soft);color:var(--bad)}
+.fb .h{background:var(--surface-2);color:var(--ink)}
+.model{font-size:.9rem;padding:8px 10px;border-radius:8px;background:var(--accent-soft)}
+.qpart{display:flex;flex-direction:column;gap:7px;padding-top:10px;border-top:1px dashed var(--line)}
+.qlab{font-weight:700;font-size:.92rem;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.qn{font:700 .72rem var(--mono);width:22px;height:22px;border-radius:50%;background:var(--surface-2);border:1px solid var(--line);display:inline-grid;place-items:center;flex:none}
+.qtype{font:700 .66rem var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--accent);background:var(--accent-soft);padding:2px 7px;border-radius:99px}
+.cnt{font:700 .74rem var(--mono);color:var(--muted);margin-left:auto}
+.mini-fb{font-size:.86rem;font-weight:700}
+.mini-fb:empty{display:none}
+.mini-fb .ok{color:var(--good)} .mini-fb .no{color:var(--bad)}
+.card select.is-ok{border-color:var(--good);background:var(--good-soft)}
+.card select.is-bad{border-color:var(--bad);background:var(--bad-soft)}
+.chip:disabled{cursor:default}
+.chip.wrong{animation:shake .35s}
+@keyframes shake{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.mcq{display:flex;flex-direction:column;gap:6px}
+.mco{text-align:left;border:1.5px solid var(--line);background:var(--surface-2);border-radius:9px;padding:8px 11px;cursor:pointer;font-size:.9rem}
+.mco:hover:not(:disabled){border-color:var(--accent)}
+.mco:disabled{cursor:default}
+.mco.right{background:var(--good-soft);border-color:var(--good);color:var(--good);font-weight:700}
+.mco.wrong{background:var(--bad-soft);border-color:var(--bad);color:var(--bad);text-decoration:line-through;animation:shake .35s}
+.tf{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;font-size:.9rem}
+.tfb{display:flex;gap:4px}
+.tfb button{border:1.5px solid var(--line);background:var(--surface-2);border-radius:7px;padding:4px 10px;cursor:pointer;font-weight:700;font-size:.8rem}
+.tfb button.right{background:var(--good);border-color:var(--good);color:#fff}
+.tfb button.wrong{background:var(--bad);border-color:var(--bad);color:#fff;animation:shake .35s}
+.card .fill{font-size:.95rem;line-height:2.3}
+.card .fill select{width:auto;display:inline-block;padding:3px 6px;margin:0 2px;font-weight:700}
+.card .fill select.is-ok{border-color:var(--good);background:var(--good-soft);color:var(--good)}
+.card .fill select.is-bad{border-color:var(--bad);background:var(--bad-soft);color:var(--bad)}
+@media (prefers-reduced-motion: reduce){ .chip.wrong,.mco.wrong,.tfb button.wrong{animation:none} }
+.org-foot{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px;align-items:center}
+.org-foot .msg{font-size:.9rem;color:var(--muted)}
+#copyBox{width:100%;min-height:160px;margin-top:10px;border:1.5px solid var(--line);border-radius:8px;background:var(--surface);padding:10px;font:.85rem var(--mono)}
+
+/* quiz */
+.quiz{max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+.qcard{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px;display:flex;flex-direction:column;gap:14px}
+.qmeta{display:flex;justify-content:space-between;font:700 .78rem var(--mono);color:var(--muted)}
+.qtext{font:700 clamp(1.25rem,3vw,1.55rem)/1.25 var(--display);text-wrap:balance}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.opt{border:1.5px solid var(--line);background:var(--surface-2);border-radius:10px;padding:12px 14px;text-align:left;cursor:pointer;font-weight:700}
+.opt:hover:not(:disabled){border-color:var(--accent)}
+.opt.right{background:var(--good-soft);border-color:var(--good);color:var(--good)}
+.opt.wrong{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
+.opt:disabled{cursor:default}
+.explain{padding:10px 12px;border-radius:9px;background:var(--surface-2)}
+.score{font:800 3rem var(--display);color:var(--accent)}
+
+/* svg anatomy */
+svg .sil-edge *{fill:var(--skin-edge);stroke:var(--skin-edge);stroke-width:3}
+svg .sil-edge .limb{fill:none;stroke-width:20;stroke-linecap:round;stroke-linejoin:round}
+svg .sil-edge .leg{stroke-width:29}
+svg .sil *{fill:var(--skin);stroke:none}
+svg .sil .limb{fill:none;stroke:var(--skin);stroke-width:16;stroke-linecap:round;stroke-linejoin:round}
+svg .sil .leg{stroke-width:25}
+svg .be{stroke:var(--bone-edge);fill:none;stroke-linecap:round}
+svg .bo{stroke:var(--bone);fill:none;stroke-linecap:round}
+svg .bf{fill:var(--bone);stroke:var(--bone-edge);stroke-width:1.2}
+svg .panelr{fill:var(--surface);stroke:var(--line);stroke-width:1.2}
+svg .svl{font:700 10px var(--mono);fill:var(--muted);letter-spacing:.06em}
+svg .svs{font:500 8px var(--mono);fill:var(--muted)}
+svg .dash{fill:none;stroke:var(--skin-edge);stroke-dasharray:3 3}
+svg .air{fill:var(--panel)}
+
+.flow{stroke-dasharray:5 9;animation:flow 1.1s linear infinite}
+@keyframes flow{to{stroke-dashoffset:-28}}
+.beat{transform-box:fill-box;transform-origin:center;animation:beat 1s ease-in-out infinite}
+@keyframes beat{0%,100%{transform:scale(1)}14%{transform:scale(1.16)}28%{transform:scale(1)}42%{transform:scale(1.08)}}
+.breathe{transform-box:fill-box;transform-origin:50% 0;animation:breathe 4s ease-in-out infinite}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.09)}}
+.diaphragm{animation:diaph 4s ease-in-out infinite}
+@keyframes diaph{0%,100%{transform:translateY(0)}50%{transform:translateY(8px)}}
+.churn{transform-box:fill-box;transform-origin:center;animation:churn 2.2s ease-in-out infinite}
+@keyframes churn{0%,100%{transform:rotate(0) scale(1)}33%{transform:rotate(-5deg) scale(1.05,.96)}66%{transform:rotate(4deg) scale(.96,1.05)}}
+.vert{animation:vglow 2.4s ease-in-out infinite}
+@keyframes vglow{0%,100%{fill:var(--bone)}12%{fill:#F6C453}}
+.joint{transform-box:fill-box;transform-origin:center;animation:joint 2s ease-in-out infinite}
+@keyframes joint{0%,100%{transform:scale(1);opacity:.55}50%{transform:scale(1.5);opacity:1}}
+.flex{transform-box:fill-box;transform-origin:center;animation:flexm 2.4s ease-in-out infinite}
+.flex-b{animation-delay:-1.2s}
+@keyframes flexm{0%,100%{transform:scale(1,1)}50%{transform:scale(1.3,.84)}}
+.gland{transform-box:fill-box;transform-origin:center;animation:gland 2.6s ease-in-out infinite}
+@keyframes gland{0%,100%{transform:scale(1)}20%{transform:scale(1.3)}}
+.horm{opacity:0;animation:horm 2.6s ease-out infinite}
+@keyframes horm{0%{transform:translate(0,0);opacity:0}15%{opacity:1}100%{transform:translate(var(--dx),var(--dy));opacity:0}}
+.halo{opacity:0;animation:halo 1.2s ease-in-out infinite}
+@keyframes halo{0%,100%{opacity:0}50%{opacity:.4}}
+.fillup{transform-box:fill-box;transform-origin:50% 100%;animation:fillup 8s ease-in-out infinite}
+@keyframes fillup{0%{transform:scaleY(.12)}80%{transform:scaleY(.9)}88%{transform:scaleY(.9)}100%{transform:scaleY(.12)}}
+.grow{transform-box:fill-box;transform-origin:50% 100%;animation:grow 5s ease-in-out infinite}
+@keyframes grow{0%,100%{transform:scaleY(.96)}50%{transform:scaleY(1)}}
+.bead{transform-box:fill-box;transform-origin:center;animation:bead 2.4s ease-in-out infinite}
+@keyframes bead{0%{transform:scale(.2);opacity:0}40%{transform:scale(1);opacity:1}80%{transform:scale(1.1) translateY(-6px);opacity:0}100%{opacity:0}}
+.ping{transform-box:fill-box;transform-origin:center;animation:ping 1.6s ease-out infinite}
+@keyframes ping{0%{transform:scale(.6);opacity:.9}100%{transform:scale(2.2);opacity:0}}
+.flake{animation:flake 4s ease-in infinite}
+@keyframes flake{0%{transform:translate(0,0) rotate(0);opacity:0}15%{opacity:1}100%{transform:translate(8px,-60px) rotate(40deg);opacity:0}}
+.forearm{transform-box:view-box;transform-origin:140px 62px;animation:forearm 3s ease-in-out infinite}
+@keyframes forearm{0%,100%{transform:rotate(0)}50%{transform:rotate(-48deg)}}
+.bicep{transform-box:fill-box;transform-origin:0% 50%;animation:bicep 3s ease-in-out infinite}
+@keyframes bicep{0%,100%{transform:scale(1,1)}50%{transform:scale(.86,1.6)}}
+.tricep{transform-box:fill-box;transform-origin:0% 50%;animation:tricep 3s ease-in-out infinite}
+@keyframes tricep{0%,100%{transform:scale(1,1)}50%{transform:scale(1.04,.7)}}
+
+.hot{cursor:pointer;outline:none}
+.hot .hit{fill:transparent}
+.hot-ring{fill:none;stroke:var(--hot);stroke-width:1.6;transform-box:fill-box;transform-origin:center;animation:ring 2s ease-out infinite}
+@keyframes ring{0%{transform:scale(.6);opacity:1}100%{transform:scale(1.7);opacity:0}}
+.hot-dot{fill:var(--hot);stroke:#fff;stroke-width:1.6}
+.hot.on .hot-dot{fill:#FFD23F;stroke:#111;r:6.5}
+.hot:focus-visible .hot-dot{stroke:var(--ink);stroke-width:3}
+
+.still svg *{animation-play-state:paused!important}
+@media (prefers-reduced-motion: reduce){ .ecg path{animation:none;stroke-dasharray:none} .bar span{transition:none} }
+
+@media (max-width:820px){
+  .explore{grid-template-columns:minmax(0,1fr)}
+  .specimen{position:static}
+  .dia-wrap svg.dia{height:min(440px,62vh)}
+  .two{grid-template-columns:1fr}
+}
+@media (max-width:480px){ .opts{grid-template-columns:1fr} .picker{grid-template-columns:repeat(2,minmax(0,1fr))} .pick{font-size:.88rem;padding:8px 10px} }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="brand">
+      <div>
+        <p class="eyebrow">Year 9 Science · Human biology</p>
+        <h1>Body Systems <span>Lab</span></h1>
+        <p>Your body systems work together to keep you alive. Explore each one, tap the glowing dots to identify organs, then complete your organiser and test yourself.</p>
+      </div>
+      <svg class="ecg" viewBox="0 0 220 44" aria-hidden="true"><path d="M0 26 H62 L68 26 L72 18 L77 26 L84 26 L89 4 L96 40 L101 26 L114 26 Q121 16 128 26 H220"/></svg>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="Sections">
+      <button class="tab" role="tab" id="tab-explore" aria-controls="explore" aria-selected="true" data-tab="explore">Explore</button>
+      <button class="tab" role="tab" id="tab-organiser" aria-controls="organiser" aria-selected="false" data-tab="organiser">Organiser <span class="count" id="orgCount">0/10</span></button>
+      <button class="tab" role="tab" id="tab-quiz" aria-controls="quiz" aria-selected="false" data-tab="quiz">Quick check</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section id="explore" role="tabpanel" aria-labelledby="tab-explore">
+    <div class="picker" id="picker"></div>
+    <div class="explore">
+      <div class="specimen" id="specimen">
+        <div class="spec-head"><span class="eyebrow" id="specLabel">Fig. 1</span><button class="pause" id="pauseBtn" type="button">Pause motion</button></div>
+        <div class="dia-wrap" id="dia"></div>
+        <div class="legend" id="legend"></div>
+        <p class="spec-cap" id="specCap">Tap a glowing dot to identify an organ.</p>
+      </div>
+      <div class="info" id="info"></div>
+    </div>
+  </section>
+
+  <section id="organiser" role="tabpanel" aria-labelledby="tab-organiser" hidden>
+    <div class="org-head">
+      <div>
+        <h2>Systems of the Body organiser</h2>
+        <p>Identify each system from its picture. Choose its name, tap its major organs and answer the function question. You get feedback straight away, and your answers save on this device.</p>
+      </div>
+      <div class="who">
+        <div class="who-row">
+          <div class="who-field"><label for="studentName">Name</label><input id="studentName" type="text" autocomplete="name" maxlength="60" placeholder="First and last name"></div>
+          <div class="who-field"><span class="who-lab" id="classLab">Class</span><div class="classes" id="classPick" role="radiogroup" aria-labelledby="classLab"></div></div>
+        </div>
+        <p class="sync" id="sync" aria-live="polite"></p>
+      </div>
+    </div>
+    <div class="bar" aria-hidden="true"><span id="bar"></span></div>
+    <div class="cards" id="cards"></div>
+    <div class="org-foot">
+      <button class="btn" id="copyBtn" type="button">Copy my answers</button>
+      <button class="btn ghost" id="resetBtn" type="button">Clear organiser</button>
+      <span class="msg" id="footMsg" aria-live="polite"></span>
+    </div>
+    <textarea id="copyBox" readonly hidden aria-label="Your answers as text"></textarea>
+  </section>
+
+  <section id="quiz" role="tabpanel" aria-labelledby="tab-quiz" hidden>
+    <div class="quiz" id="quizBox"></div>
+  </section>
+</main>
+
+<script src="config.js"></script>
+<script>
+/* ---------- content ---------- */
+const SYS = [
+{id:'circulatory',name:'Circulatory',color:'#D63A3A',
+ func:'Transports oxygen, nutrients and hormones around the body in the blood, and carries waste such as carbon dioxide away. Blood also carries white blood cells that fight infection.',
+ think:['When you sprint, your heart beats faster. Why would your muscles need that?','Working muscles respire faster, so they need more oxygen and glucose and make more carbon dioxide. A faster heartbeat delivers supplies and removes waste more quickly.'],
+ parts:[
+  ['Heart',101,110,'A muscular pump with four chambers. It beats about 70 times a minute at rest, pushing blood into the arteries.'],
+  ['Arteries',85,290,'Carry blood <b>a</b>way from the heart under high pressure, so they have thick, muscular, stretchy walls. Most carry oxygen-rich blood (red on the diagram).'],
+  ['Veins',121,290,'Carry blood back to the heart at low pressure. Valves stop the blood flowing backwards. Most carry deoxygenated blood (blue on the diagram).'],
+  ['Capillaries',46,222,'Tiny vessels only one cell thick, found in every tissue. Oxygen and glucose pass out to cells here; carbon dioxide and waste pass back in.']],
+ steps:['The heart contracts and pumps blood into the arteries.','Arteries branch into capillaries inside every organ.','In the capillaries, oxygen and nutrients pass into cells, and carbon dioxide and waste pass into the blood.','Veins carry the blood back to the heart.','The heart pumps it to the lungs to collect oxygen, and the journey repeats.'],
+ legend:[['#D63A3A','Arteries: away from heart'],['#3B6FD8','Veins: back to heart']],
+ tip:'Memory hook: <b>A</b>rteries go <b>A</b>way from the heart. Careful: veins carry blood to the <i>heart</i>, not straight to the lungs.',
+ fact:'Laid end to end, your blood vessels would stretch roughly 100,000 km: more than twice around the Earth.',
+ stretch:'Explain why the left side of the heart has a thicker muscle wall than the right side. (Think about where each side pumps blood.)',
+ org:{correct:['Heart','Arteries','Veins','Capillaries'],keys:[['transports or carries substances','transport|carr|deliver|move|pump|circulat'],['oxygen','oxygen|o2'],['nutrients, hormones or waste','nutrient|glucose|food|hormone|waste|carbon']]},
+ hint:'Look for the organ that is pumping, and the red and blue tubes leaving and returning to it.'},
+{id:'muscular',name:'Muscular',color:'#A8324A',
+ func:'Moves the body by contracting and pulling on bones. Muscles also move food through the gut, pump the heart, hold your posture and release heat to keep you warm.',
+ think:['You cannot stop your heart beating just by thinking about it. What does that tell you about heart muscle?','Heart (cardiac) muscle is involuntary: it works without you deciding. Only skeletal muscle is voluntary.'],
+ parts:[
+  ['Skeletal muscle',60,128,'Attached to bones by tendons. It is voluntary, so you choose when it contracts. The biceps here bends your arm.'],
+  ['Tendons',83,368,'Tough, strong cords that join muscle to bone. The Achilles tendon joins your calf muscle to your heel.'],
+  ['Cardiac muscle',null,null,'Found only in the heart. It contracts rhythmically your whole life without tiring, and it is involuntary.'],
+  ['Smooth muscle',null,null,'Found in the walls of the stomach, intestines, bladder and blood vessels. Involuntary: it squeezes food along your gut without you thinking about it.']],
+ steps:['Your brain sends an impulse along a nerve to a muscle.','The muscle fibres contract, becoming shorter and fatter.','The muscle pulls on a tendon, which pulls on a bone.','The bone moves at a joint.','Muscles can only pull, so they work in pairs: when one contracts, its partner relaxes.'],
+ legend:[],
+ tip:'Three types: <b>skeletal</b> (voluntary), <b>cardiac</b> and <b>smooth</b> (both involuntary).',
+ fact:'You have more than 600 muscles. For its size, one of the strongest is the masseter, the jaw muscle you chew with.',
+ stretch:'Muscles can only pull, never push. Use the biceps and triceps to explain how your arm can bend and then straighten again.',
+ extra:'arm',
+ org:{correct:['Skeletal muscle','Smooth muscle','Cardiac muscle','Tendons'],keys:[['movement','mov'],['contracting or pulling','contract|pull|shorten'],['works with bones','bone|skelet|joint']]},
+ hint:'These red, stripy tissues bulge and relax. They sit on top of the bones.'},
+{id:'digestive',name:'Digestive',color:'#E07B2E',
+ func:'Breaks food down into small molecules that can be absorbed into the blood, giving the body energy and nutrients. Undigested food leaves the body as faeces.',
+ think:['If you chew a plain cracker for a long time, it starts to taste sweet. What might be happening in your mouth?','Enzymes in saliva start breaking starch down into sugar. Chemical digestion begins in the mouth, not the stomach.'],
+ parts:[
+  ['Mouth',100,54,'Teeth tear and grind food into smaller pieces (mechanical digestion). Saliva starts chemical digestion.'],
+  ['Oesophagus',100,84,'A muscular tube from mouth to stomach. Waves of smooth muscle (peristalsis) squeeze food down, even upside down.'],
+  ['Stomach',117,124,'Churns food with acid and enzymes. The acid also kills most microbes swallowed with food.'],
+  ['Liver',80,118,'Makes bile, which breaks fat into tiny droplets so enzymes can digest it faster.'],
+  ['Gallbladder',90,134,'Stores bile and squirts it into the small intestine after a meal.'],
+  ['Pancreas',110,147,'Releases digestive enzymes into the small intestine. It also releases insulin into the blood to control blood sugar.'],
+  ['Small intestine',100,176,'Finishes digestion. Its folded lining (villi) absorbs nutrients into the blood.'],
+  ['Large intestine',80,182,'Absorbs water from the leftover undigested food, forming faeces.'],
+  ['Anus',100,215,'Faeces leave the body here. This is called egestion.']],
+ steps:['Teeth and saliva break food down in the mouth.','Food is swallowed and squeezed down the oesophagus.','The stomach churns it with acid and enzymes.','In the small intestine, bile and enzymes finish digestion and nutrients are absorbed into the blood.','The large intestine absorbs water, and the waste leaves through the anus.'],
+ legend:[['#7A4E2D','Food travelling through the gut']],
+ tip:'Mechanical digestion = physically breaking food up (teeth, churning). Chemical digestion = enzymes breaking big molecules into small ones.',
+ fact:'Your small intestine is about 6 metres long. All its folds and villi give it a surface of around 30 m².',
+ stretch:'Someone has had their gallbladder removed. Explain why a doctor might advise them to eat less fatty food.',
+ org:{correct:['Mouth','Oesophagus','Stomach','Liver','Gallbladder','Pancreas','Small intestine','Large intestine','Anus'],keys:[['breaks down food','break|digest'],['absorbs nutrients','absor|nutrient'],['energy','energy']]},
+ hint:'Follow the long tube from the mouth all the way down. Something is moving along it.'},
+{id:'skeletal',name:'Skeletal',color:'#8C826F',
+ func:'Supports the body and gives it shape, protects delicate organs, works with muscles for movement, stores minerals such as calcium, and makes blood cells in the bone marrow.',
+ think:['A newborn baby has around 300 bones, but an adult has 206. Where could the "missing" bones have gone?','Some bones fuse together as you grow, for example the plates of the skull and the bones at the base of the spine.'],
+ parts:[
+  ['Skull',100,24,'Protects the brain like a built-in helmet. It is made of plates that fuse together as you grow.'],
+  ['Rib cage',121,112,'Twelve pairs of ribs protect the heart and lungs, and move up and out when you breathe in.'],
+  ['Vertebrae',100,165,'The 33 bones of the backbone. They hold you upright and surround and protect the spinal cord.'],
+  ['Pelvis',117,210,'The hip bones. They support the organs of the lower abdomen and connect the legs to the spine.'],
+  ['Bone marrow',87,262,'Soft, jelly-like tissue inside large bones such as the femur, where red and white blood cells are made.'],
+  ['Joints',54,159,'Places where bones meet. Ligaments hold the bones together and cartilage cushions their ends (the glowing points on the diagram).']],
+ steps:['Bones are hard because they contain calcium phosphate.','The skeleton forms a frame that supports soft organs.','Bones like the skull and ribs protect vital organs.','Muscles pull on bones, which move at joints.','Bone marrow inside large bones makes new blood cells.'],
+ legend:[['#F6C453','Joints']],
+ tip:'Ligaments join bone to bone. Tendons join muscle to bone.',
+ fact:'The smallest bone in your body, the stapes in your ear, is only about 3 mm long.',
+ stretch:'Explain why a badly broken femur (thigh bone) could affect more than just walking.',
+ org:{correct:['Skull','Rib cage','Vertebrae','Pelvis','Bone marrow'],keys:[['support or shape','support|structure|shape|frame|upright'],['protects organs','protect'],['blood cells or minerals','blood|marrow|mineral|calcium']]},
+ hint:'You can see a skull, a column of small blocks and curved bars around the chest.'},
+{id:'nervous',name:'Nervous',color:'#16958A',
+ func:'Coordinates the body using fast electrical impulses. Sense organs detect stimuli, the brain and spinal cord process the information, and nerves carry messages to muscles and glands.',
+ think:['If you touch a hot pan, you pull your hand away before you feel the pain. How could that happen so fast?','It is a reflex. The impulse goes to the spinal cord and straight back out to the muscle, without waiting for the brain to decide.'],
+ parts:[
+  ['Brain',100,34,'The control centre. It receives information from the senses, makes decisions and stores memories.'],
+  ['Spinal cord',100,150,'A thick bundle of nerves inside the vertebrae. It links the brain to the rest of the body and controls reflexes.'],
+  ['Nerves',54,160,'Bundles of neurons (nerve cells). Sensory neurons carry impulses to the CNS; motor neurons carry impulses to muscles and glands.'],
+  ['Sense organs',null,null,'Eyes, ears, nose, tongue and skin contain receptors that detect stimuli such as light, sound, chemicals, touch and temperature.']],
+ steps:['A receptor in a sense organ detects a stimulus.','A sensory neuron carries an electrical impulse to the spinal cord and brain.','The brain processes the information and decides on a response.','A motor neuron carries an impulse to a muscle or gland.','The muscle contracts or the gland releases a chemical: the response.'],
+ legend:[['#FFD23F','Sensory impulse to brain'],['#FF7A3D','Motor impulse to muscles']],
+ tip:'Central nervous system (CNS) = brain + spinal cord. Peripheral nervous system = all the nerves branching off.',
+ fact:'The fastest nerve impulses travel at about 120 m/s, which is over 400 km/h.',
+ stretch:'A reflex skips the thinking part of the brain. Suggest one advantage and one disadvantage of this.',
+ extra:'neuron',
+ org:{correct:['Brain','Spinal cord','Nerves'],keys:[['signals or impulses','signal|impulse|message|electric'],['coordinates or controls','coordinat|control|respon'],['senses or stimuli','sens|stimul|detect']]},
+ hint:'Thin branching lines spread from a central cord to every part of the body. Signals are racing along them.'},
+{id:'excretory',name:'Excretory',color:'#2F7FC1',
+ func:'Removes waste made by the body\'s cells. The kidneys filter the blood to make urine, the lungs breathe out carbon dioxide, the skin releases sweat and the liver breaks down toxins.',
+ think:['On a hot day you drink lots of water but go to the toilet less. Where is all that water going?','You lose more water as sweat, so your kidneys save water by making a smaller amount of more concentrated urine.'],
+ parts:[
+  ['Kidneys',82,154,'Filter the blood, removing urea, extra salts and water to make urine. They filter about 180 litres of blood plasma every day.'],
+  ['Ureters',91,180,'Two tubes that carry urine from the kidneys to the bladder.'],
+  ['Bladder',100,202,'A stretchy bag that stores urine. Stretch receptors tell your brain when it is full.'],
+  ['Lungs',118,114,'Excrete carbon dioxide, a waste product of respiration, every time you breathe out.'],
+  ['Liver',80,131,'Breaks down toxins and turns extra protein into urea, which the kidneys then remove.'],
+  ['Skin',52,165,'Sweat glands release water, salts and a little urea.']],
+ steps:['Cells make waste such as carbon dioxide and urea.','The waste passes into the blood.','The kidneys filter the blood and make urine.','Urine flows down the ureters and is stored in the bladder.','When the bladder is full, it is emptied through the urethra.'],
+ legend:[['#D9A91E','Urine flowing to the bladder']],
+ tip:'Careful: faeces is not excretion. Undigested food was never inside your cells, so getting rid of it is called <b>egestion</b>.',
+ fact:'Your kidneys filter your whole blood plasma volume dozens of times every day.',
+ stretch:'Suggest why a person whose kidneys have stopped working needs dialysis several times a week.',
+ org:{correct:['Kidneys','Ureters','Bladder','Lungs','Liver','Skin'],accept:['Large intestine'],keys:[['removes waste','remov|rid|excret|waste'],['filters blood or makes urine','filter|urine|kidney'],['carbon dioxide or sweat','carbon dioxide|co2|sweat']]},
+ hint:'Two bean-shaped organs connect by tubes to a small bag that keeps filling up.'},
+{id:'respiratory',name:'Respiratory',color:'#E0607E',
+ func:'Takes oxygen into the blood and removes carbon dioxide (gas exchange). Breathing moves air in and out of the lungs.',
+ think:['Put a hand on your stomach and breathe in deeply. Why does your stomach move out when air is going into your chest?','Your diaphragm contracts and flattens, moving down and pushing your abdomen out. This makes more space in the chest, so air rushes into the lungs.'],
+ parts:[
+  ['Trachea',100,82,'The windpipe. Rings of cartilage keep it open. Mucus and tiny hairs (cilia) trap dust and microbes.'],
+  ['Bronchi',110,113,'The trachea splits into two bronchi, one into each lung, which branch again and again.'],
+  ['Lungs',80,134,'Spongy organs full of air passages and blood vessels, protected by the rib cage.'],
+  ['Alveoli',120,143,'Millions of tiny air sacs with very thin walls and lots of capillaries. Oxygen diffuses into the blood and carbon dioxide diffuses out.'],
+  ['Diaphragm',100,158,'A dome-shaped sheet of muscle under the lungs. It contracts and flattens to breathe in, and relaxes to breathe out.']],
+ steps:['The diaphragm contracts and the ribs move up and out.','The chest gets bigger, so air is drawn in through the nose and mouth.','Air travels down the trachea and bronchi into the lungs.','In the alveoli, oxygen moves into the blood and carbon dioxide moves out.','The diaphragm relaxes and air is pushed back out.'],
+ legend:[['#2F7BFF','Oxygen in'],['#7A7F87','Carbon dioxide out']],
+ tip:'Breathing (moving air) and respiration (releasing energy in cells) are not the same thing.',
+ fact:'Spread flat, the alveoli in your lungs would cover about 70 m², roughly the floor of a classroom.',
+ stretch:'Explain how three features of the alveoli make gas exchange fast.',
+ org:{correct:['Trachea','Bronchi','Lungs','Alveoli','Diaphragm'],keys:[['oxygen in','oxygen|o2'],['carbon dioxide out','carbon dioxide|co2'],['gas exchange or breathing','exchange|breath|inhal|exhal']]},
+ hint:'Two pink organs in the chest expand and shrink, and tiny particles move down a tube.'},
+
+];
+const byId = Object.fromEntries(SYS.map(s=>[s.id,s]));
+
+/* ---------- drawings ---------- */
+const bodySil = (op=1) => `<g opacity="${op}">${['sil-edge','sil'].map(c=>`<g class="${c}"><circle cx="100" cy="40" r="25"/><rect x="90" y="58" width="20" height="22" rx="4"/><path d="M66 86 Q100 76 134 86 Q142 90 141 104 L138 160 Q136 196 132 216 L68 216 Q64 196 62 160 L59 104 Q58 90 66 86Z"/><path class="limb" d="M68 94 L52 160 L45 222"/><path class="limb" d="M132 94 L148 160 L155 222"/><path class="limb leg" d="M86 206 L84 300 L82 380"/><path class="limb leg" d="M114 206 L116 300 L118 380"/></g>`).join('')}</g>`;
+const mot = (r,fill,path,dur,begin,extra='') => `<circle r="${r}" fill="${fill}" ${extra}><animateMotion dur="${dur}s" begin="${begin}s" repeatCount="indefinite" path="${path}"/></circle>`;
+const ART=['M104 104 L102 70 L102 26','M104 104 Q90 92 70 96 L54 160 L47 222','M104 104 Q118 92 130 96 L146 160 L153 222','M104 112 L103 198 L88 214 L86 300 L84 378','M103 198 L112 214 L114 300 L116 378'];
+const VEN=['M96 26 L96 70 L98 106','M42 222 L49 160 L65 91 Q86 87 98 104','M158 222 L151 160 L135 91 Q114 87 102 104','M79 378 L81 300 L83 212 L97 196 L98 114','M121 378 L119 300 L117 212 L99 198'];
+
+const DRAW = {
+circulatory: u => bodySil() + `<g fill="none" stroke-linecap="round" stroke-linejoin="round">${ART.map(d=>`<path d="${d}" stroke="#D63A3A" stroke-width="3.2"/><path class="flow" d="${d}" stroke="#FFD3D3" stroke-width="1.4"/>`).join('')}${VEN.map(d=>`<path d="${d}" stroke="#3B6FD8" stroke-width="3.2"/><path class="flow" d="${d}" stroke="#D3E2FF" stroke-width="1.4"/>`).join('')}</g><g transform="translate(101 108)"><path class="beat" d="M0 -3 C-6 -13 -20 -7 -13 5 L0 16 L13 5 C20 -7 6 -13 0 -3Z" fill="#C62828" stroke="#7A1414" stroke-width="1"/></g>`,
+
+respiratory: u => {
+  const rings = Array.from({length:8},(_,i)=>`<path d="M96 ${64+i*5} H104"/>`).join('');
+  const L='M96 104 Q74 98 70 124 Q66 152 74 158 Q86 162 96 152 Z', R='M104 104 Q126 98 130 124 Q134 152 126 158 Q114 162 104 152 Z';
+  const o2='M100 48 L100 102 L90 114 L82 132', co2='M118 134 L110 114 L100 102 L100 48';
+  return bodySil() + `<path d="M90 50 Q96 56 100 60" stroke="#C98F86" stroke-width="3" fill="none"/>
+  <g class="breathe"><path d="${L}" fill="#E8909F" stroke="#B5566A" stroke-width="1.2"/><path d="${R}" fill="#E8909F" stroke="#B5566A" stroke-width="1.2"/>
+  <path d="M100 102 L90 114 L84 128 M90 114 L80 120 M100 102 L110 114 L116 128 M110 114 L120 120" fill="none" stroke="#F8DCD6" stroke-width="2.4" stroke-linecap="round"/>
+  <g fill="#F7B8C6" stroke="#B5566A" stroke-width=".7"><circle cx="118" cy="138" r="3"/><circle cx="123" cy="142" r="3"/><circle cx="116" cy="144" r="3"/><circle cx="121" cy="148" r="3"/></g></g>
+  <rect x="96" y="60" width="8" height="44" rx="3" fill="#F3D9D0" stroke="#C98F86"/><g stroke="#C98F86" stroke-width="1">${rings}</g>
+  <path class="diaphragm" d="M64 164 Q100 146 136 164" stroke="#A33E55" stroke-width="4" fill="none" stroke-linecap="round"/>
+  ${[0,1,2].map(i=>mot(2.4,'#2F7BFF',o2,3,-i)).join('')}${[0,1].map(i=>mot(2.4,'#7A7F87',co2,3,-(i*1.5+.7))).join('')}`;
+},
+
+digestive: u => {
+  const coil='M92 160 H108 Q112 160 112 164 Q112 168 108 168 H92 Q88 168 88 172 Q88 176 92 176 H108 Q112 176 112 180 Q112 184 108 184 H92 Q88 184 88 188 Q88 192 92 192 H108';
+  const LI='M80 200 L80 158 Q80 154 84 154 L118 154 Q122 154 122 158 L122 198 Q120 206 106 206 L100 214';
+  const food=`M100 54 L100 112 Q118 104 124 120 Q126 138 110 142 L92 160 ${coil.replace('M92 160 ','')} L80 198 L80 158 Q80 154 84 154 L118 154 Q122 154 122 158 L122 198 Q120 206 106 206 L100 216`;
+  return bodySil() + `<path d="${LI}" stroke="#D2756A" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="${coil}" stroke="#F0B3A2" stroke-width="4.5" fill="none" stroke-linecap="round"/><path d="${coil}" stroke="#C97C6B" stroke-width=".8" fill="none"/>
+  <path d="M70 112 Q86 104 104 112 Q100 128 84 132 Q72 132 70 120Z" fill="#8E3B2F"/>
+  <ellipse cx="90" cy="134" rx="4" ry="5" fill="#6BA34A"/>
+  <path d="M96 146 Q110 140 126 146 Q114 150 96 149Z" fill="#E9C46A" stroke="#B8932F" stroke-width=".6"/>
+  <path d="M100 57 L100 112" stroke="#E8A08A" stroke-width="6" stroke-linecap="round"/><path class="flow" d="M100 57 L100 112" stroke="#F8D3C6" stroke-width="2" fill="none"/>
+  <path class="churn" d="M99 112 Q118 102 128 116 Q132 136 116 144 Q104 146 100 136 Q106 132 108 124 Q104 118 99 116Z" fill="#F0A99A" stroke="#C2665A"/>
+  <ellipse cx="100" cy="54" rx="6" ry="3" fill="#C0392B"/><circle cx="100" cy="215" r="2" fill="#7A3B2E"/>
+  ${mot(3.6,'#7A4E2D',food,11,-1,'stroke="#fff" stroke-width="1"')}${mot(3.2,'#7A4E2D',food,11,-6.5,'stroke="#fff" stroke-width="1"')}`;
+},
+
+skeletal: u => {
+  const b=(d,w=5)=>`<path class="be" d="${d}" stroke-width="${w+2}"/><path class="bo" d="${d}" stroke-width="${w}"/>`;
+  let ribs=''; for(let i=0;i<6;i++){const y=95+i*9; ribs+=b(`M98 ${y} C82 ${y-6} 70 ${y+4} 76 ${y+14}`,2.6)+b(`M102 ${y} C118 ${y-6} 130 ${y+4} 124 ${y+14}`,2.6);}
+  let spine=''; for(let i=0,y=62;y<200;y+=7,i++) spine+=`<rect class="bf vert" x="97" y="${y}" width="6" height="5" rx="1.5" style="animation-delay:${(i*0.09).toFixed(2)}s"/>`;
+  const limbs = b('M70 94 L55 156',5)+b('M53 162 L46 214',2.6)+b('M56 163 L49 215',2.6)+b('M130 94 L145 156',5)+b('M147 162 L154 214',2.6)+b('M144 163 L151 215',2.6);
+  const legs = b('M89 220 L86 294',6)+b('M85 306 L83 370',4)+b('M89 306 L87 368',2.4)+b('M111 220 L114 294',6)+b('M115 306 L117 370',4)+b('M111 306 L113 368',2.4);
+  const joints=[[70,94],[130,94],[54,159],[146,159],[87,300],[113,300],[89,218],[111,218]].map(([x,y],i)=>`<circle class="joint" cx="${x}" cy="${y}" r="3.4" fill="#F6C453" style="animation-delay:${(i*.25).toFixed(2)}s"/>`).join('');
+  return bodySil(.35) + spine + ribs + b('M97 88 Q82 84 70 92',3) + b('M103 88 Q118 84 130 92',3) + limbs +
+  `<path class="bf" d="M80 196 Q72 206 80 218 Q90 226 100 214 Q110 226 120 218 Q128 206 120 196 Q110 204 100 200 Q90 204 80 196Z"/>` + legs +
+  `<circle class="bf" cx="46" cy="220" r="4"/><circle class="bf" cx="154" cy="220" r="4"/><ellipse class="bf" cx="82" cy="376" rx="6" ry="3.5"/><ellipse class="bf" cx="118" cy="376" rx="6" ry="3.5"/>
+  <circle class="bf" cx="100" cy="36" r="19"/><path class="bf" d="M88 46 Q90 60 100 62 Q110 60 112 46Z"/>
+  <circle cx="93" cy="35" r="4" fill="#4A3F35"/><circle cx="107" cy="35" r="4" fill="#4A3F35"/><path d="M100 40 L97 46 L103 46Z" fill="#4A3F35"/><path d="M92 53 H108 M96 51 V55 M100 51 V55 M104 51 V55" stroke="#8C7B60" stroke-width=".8"/>` + joints;
+},
+
+muscular: u => {
+  const p=`${u}-stri`;
+  let abs=''; for(let r=0;r<3;r++) for(let c=0;c<2;c++) abs+=`<rect x="${c?101:91}" y="${118+r*13}" width="8" height="11" rx="3"/>`;
+  return bodySil() + `<defs><pattern id="${p}" width="3" height="3" patternUnits="userSpaceOnUse"><rect width="3" height="3" fill="#C23A3A"/><path d="M0.6 0 V3" stroke="#E2675B" stroke-width=".8"/></pattern></defs>
+  <g fill="url(#${p})" stroke="#7E1F22" stroke-width=".8">
+   <ellipse cx="68" cy="97" rx="9" ry="11"/><ellipse cx="132" cy="97" rx="9" ry="11"/>
+   <path d="M99 90 Q82 86 72 96 Q74 112 90 114 Q99 112 99 100Z"/><path d="M101 90 Q118 86 128 96 Q126 112 110 114 Q101 112 101 100Z"/>
+   ${abs}
+   <path d="M70 118 Q72 150 86 170 L89 120Z"/><path d="M130 118 Q128 150 114 170 L111 120Z"/>
+   <g transform="rotate(14 60 128)"><ellipse class="flex" cx="60" cy="128" rx="6.5" ry="17"/></g>
+   <g transform="rotate(-14 140 128)"><ellipse class="flex flex-b" cx="140" cy="128" rx="6.5" ry="17"/></g>
+   <g transform="rotate(8 50 190)"><ellipse cx="50" cy="190" rx="5" ry="20"/></g><g transform="rotate(-8 150 190)"><ellipse cx="150" cy="190" rx="5" ry="20"/></g>
+   <ellipse class="flex flex-b" cx="86" cy="252" rx="11" ry="36"/><ellipse class="flex" cx="114" cy="252" rx="11" ry="36"/>
+   <ellipse cx="84" cy="334" rx="8" ry="25"/><ellipse cx="116" cy="334" rx="8" ry="25"/>
+  </g>
+  <path d="M83 358 L82 374 M117 358 L118 374" stroke="#EFE3C8" stroke-width="3.2" stroke-linecap="round"/>`;
+},
+
+nervous: u => {
+  const N=['M100 92 Q84 92 70 96 L54 160 L46 222','M54 160 L40 188','M62 128 L70 140','M100 92 Q116 92 130 96 L146 160 L154 222','M146 160 L160 188','M138 128 L130 140','M100 200 L88 214 L85 300 L83 378','M85 300 L76 344','M86 250 L78 262','M100 200 L112 214 L115 300 L117 378','M115 300 L124 344','M114 250 L122 262','M100 50 L90 60','M100 50 L110 60'];
+  for(let y=108;y<=188;y+=16){N.push(`M100 ${y} Q90 ${y+2} 74 ${y+10}`,`M100 ${y} Q110 ${y+2} 126 ${y+10}`);}
+  const S='M46 222 L54 160 L70 96 Q84 92 100 92 L100 40', M='M100 40 L100 200 L88 214 L85 300 L83 378';
+  return bodySil() + `<g fill="none" stroke="#16958A" stroke-width="1.6" stroke-linecap="round">${N.map(d=>`<path d="${d}"/>`).join('')}</g>
+  <path d="M100 50 L100 202" stroke="#0F6E66" stroke-width="4" stroke-linecap="round"/>
+  <circle class="halo" cx="100" cy="34" r="25" fill="#FFD23F"/>
+  <ellipse cx="100" cy="34" rx="19" ry="14" fill="#E7A6B5" stroke="#A85A6E"/>
+  <path d="M86 30 q4 -4 8 0 t8 0 t8 0 M84 38 q4 4 8 0 t8 0 t8 0 M100 21 V47" stroke="#A85A6E" fill="none" stroke-width="1"/>
+  ${mot(2.7,'#FFD23F',S,2.4,0,'stroke="#8A6200" stroke-width=".7"')}${mot(2.7,'#FFD23F',S,2.4,-1.2,'stroke="#8A6200" stroke-width=".7"')}
+  ${mot(2.7,'#FF7A3D',M,2.8,-.4,'stroke="#8A3300" stroke-width=".7"')}${mot(2.7,'#FF7A3D',M,2.8,-1.8,'stroke="#8A3300" stroke-width=".7"')}`;
+},
+
+excretory: u => {
+  const LU='M96 100 Q78 96 74 114 Q72 128 80 130 Q90 130 96 122Z', RU='M104 100 Q122 96 126 114 Q128 128 120 130 Q110 130 104 122Z';
+  const UL='M88 162 Q90 182 96 196', UR='M112 162 Q110 182 104 196';
+  const BL='M88 199 Q88 190 100 190 Q112 190 112 199 Q112 212 100 214 Q88 212 88 199Z';
+  return bodySil() + `<defs><clipPath id="${u}-bl"><path d="${BL}"/></clipPath></defs>
+  <g opacity=".45"><path d="${LU}" fill="#E8909F"/><path d="${RU}" fill="#E8909F"/></g>
+  <path d="M70 128 Q84 122 98 128 Q94 137 82 139 Q72 137 70 132Z" fill="#8E3B2F" opacity=".55"/>
+  <path d="M102 98 V212" stroke="#D63A3A" stroke-width="3"/><path d="M98 98 V212" stroke="#3B6FD8" stroke-width="3"/>
+  <path d="M102 152 H112 M98 152 H88" stroke="#D63A3A" stroke-width="2"/><path d="M98 157 H88 M102 157 H112" stroke="#3B6FD8" stroke-width="2"/>
+  <path d="M86 141 Q76 143 76 155 Q76 167 86 169 Q92 167 90 159 Q88 155 90 151 Q92 143 86 141Z" fill="#9E3B33" stroke="#6B2520"/>
+  <path d="M114 141 Q124 143 124 155 Q124 167 114 169 Q108 167 110 159 Q112 155 110 151 Q108 143 114 141Z" fill="#9E3B33" stroke="#6B2520"/>
+  <path d="${UL}" stroke="#E2B84A" stroke-width="2.2" fill="none"/><path d="${UR}" stroke="#E2B84A" stroke-width="2.2" fill="none"/>
+  <path d="${BL}" fill="#F6ECCB"/><g clip-path="url(#${u}-bl)"><rect class="fillup" x="86" y="188" width="28" height="28" fill="#E8C33A"/></g><path d="${BL}" fill="none" stroke="#B8932F"/>
+  <path d="M100 214 V222" stroke="#B8932F" stroke-width="2"/>
+  ${mot(1.8,'#D9A91E',UL,1.8,0)}${mot(1.8,'#D9A91E',UL,1.8,-.9)}${mot(1.8,'#D9A91E',UR,1.8,-.4)}${mot(1.8,'#D9A91E',UR,1.8,-1.3)}`;
+},
+
+
+};
+
+const EXTRA = {
+arm: `<svg viewBox="0 0 260 150" role="img" aria-label="Animated arm: biceps contracts and pulls the forearm up while the triceps relaxes">
+  <circle class="bf" cx="36" cy="50" r="11"/>
+  <path class="be" d="M36 50 L140 62" stroke-width="11"/><path class="bo" d="M36 50 L140 62" stroke-width="9"/>
+  <ellipse class="tricep" cx="44" cy="72" rx="44" ry="8" fill="#9C2F35"/>
+  <g class="forearm"><path class="be" d="M140 62 L230 70" stroke-width="10"/><path class="bo" d="M140 62 L230 70" stroke-width="8"/><circle cx="238" cy="70" r="10" fill="var(--skin)" style="fill:var(--skin)"/><path d="M150 58 L128 46" stroke="#EFE3C8" stroke-width="3" stroke-linecap="round"/></g>
+  <ellipse class="bicep" cx="44" cy="44" rx="44" ry="10" fill="#C23A3A"/>
+  <circle cx="140" cy="62" r="5" fill="#F6C453"/>
+  <text class="svs" x="52" y="24">BICEPS contracts</text><text class="svs" x="52" y="98">TRICEPS relaxes</text><text class="svs" x="130" y="90">ELBOW JOINT</text><text class="svs" x="138" y="128">tendon pulls the forearm bone</text>
+</svg>`,
+neuron: `<svg viewBox="0 0 320 120" role="img" aria-label="Animated neuron with an impulse travelling from the dendrites along the axon to the terminals">
+  <g stroke="#16958A" stroke-width="2" fill="none" stroke-linecap="round"><path d="M50 60 L20 34 M32 45 L22 52 M50 60 L16 64 M50 60 L24 92 M34 78 L22 74 M50 60 L44 22"/><path d="M64 60 H270" stroke-width="3"/><path d="M270 60 L294 42 M270 60 L298 60 M270 60 L294 78"/></g>
+  <g fill="#F2E6C9" stroke="#C9B88E">${[80,114,148,182,216].map(x=>`<rect x="${x}" y="53" width="27" height="14" rx="7"/>`).join('')}</g>
+  <g fill="#16958A"><circle cx="295" cy="42" r="3.5"/><circle cx="299" cy="60" r="3.5"/><circle cx="295" cy="78" r="3.5"/></g>
+  <circle cx="50" cy="60" r="15" fill="#8FDCD0" stroke="#16958A" stroke-width="2"/><circle cx="50" cy="60" r="5.5" fill="#16958A"/>
+  <circle r="5" fill="#FFD23F" stroke="#8A6200"><animateMotion dur="2.2s" repeatCount="indefinite" path="M20 34 L50 60 L270 60 L298 60"/></circle>
+  <text class="svs" x="6" y="112">DENDRITES</text><text class="svs" x="38" y="16">CELL BODY</text><text class="svs" x="110" y="44">MYELIN SHEATH</text><text class="svs" x="150" y="86">AXON</text><text class="svs" x="250" y="104">TERMINALS</text>
+</svg>`
+};
+
+function svgFor(id,u,mini){
+  const s=byId[id];
+  const hs = mini ? '' : s.parts.map((p,i)=>p[1]==null?'':`<g class="hot" data-part="${i}" tabindex="0" role="button" aria-label="${p[0]}"><circle class="hit" cx="${p[1]}" cy="${p[2]}" r="12"/><circle class="hot-ring" cx="${p[1]}" cy="${p[2]}" r="8"/><circle class="hot-dot" cx="${p[1]}" cy="${p[2]}" r="4.5"/></g>`).join('');
+  return `<svg class="dia" viewBox="0 0 200 400" role="img" aria-label="${mini?'Mystery body system diagram':s.name+' system diagram'}">${DRAW[id](u)}${hs}</svg>`;
+}
+
+/* ---------- state ---------- */
+const blankCard=()=>({name:'',found:[],wrong:[],picks:[],tf:{},fill:{},fn:'',typedOK:false,miss:0});
+const KEY='bodySystemsLab-v2';
+let state={student:'',cls:'',id:'',viewed:[],quiz:{best:null,last:null,attempts:0},cards:{},last:'circulatory'};
+try{const raw=localStorage.getItem(KEY); if(raw) state=Object.assign(state,JSON.parse(raw));}catch(e){}
+SYS.forEach(s=>{ if(!state.cards[s.id]) state.cards[s.id]=blankCard(); });
+let saveT; function save(){clearTimeout(saveT); saveT=setTimeout(()=>{try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}},250);}
+
+let still=false;
+try{ still = window.matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){}
+function applyMotion(){
+  document.body.classList.toggle('still',still);
+  document.querySelectorAll('svg').forEach(s=>{ try{ still ? s.pauseAnimations() : s.unpauseAnimations(); }catch(e){} });
+  const b=document.getElementById('pauseBtn'); b.textContent = still?'Play motion':'Pause motion'; b.setAttribute('aria-pressed',still);
+}
+
+/* ---------- tabs ---------- */
+const tabs=[...document.querySelectorAll('.tab')];
+function showTab(name){
+  tabs.forEach(t=>t.setAttribute('aria-selected',t.dataset.tab===name));
+  ['explore','organiser','quiz'].forEach(id=>document.getElementById(id).hidden = id!==name);
+  if(name==='quiz' && !quiz.started) startQuiz();
+}
+tabs.forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab)));
+
+/* ---------- explore ---------- */
+const picker=document.getElementById('picker');
+picker.innerHTML = SYS.map((s,i)=>`<button class="pick" type="button" data-id="${s.id}" style="--sys:${s.color}" aria-pressed="false"><span class="sw"></span>${s.name}</button>`).join('');
+picker.addEventListener('click',e=>{const b=e.target.closest('.pick'); if(b) selectSystem(b.dataset.id);});
+
+let cur=null;
+function selectSystem(id){
+  cur=id; state.last=id; if(!state.viewed.includes(id)){state.viewed.push(id); if(typeof scheduleSync==='function') scheduleSync();} save();
+  const s=byId[id], n=SYS.indexOf(s)+1;
+  picker.querySelectorAll('.pick').forEach(b=>b.setAttribute('aria-pressed',b.dataset.id===id));
+  document.getElementById('specimen').style.setProperty('--sys',s.color);
+  document.getElementById('specLabel').textContent=`Fig. ${n} · ${s.name} system`;
+  document.getElementById('dia').innerHTML=svgFor(id,'ex',false);
+  document.getElementById('legend').innerHTML=s.legend.map(([c,t])=>`<span><i style="background:${c}"></i>${t}</span>`).join('');
+  document.getElementById('specCap').innerHTML='Tap a glowing dot (or an organ name) to identify it.';
+  const info=document.getElementById('info'); info.style.setProperty('--sys',s.color);
+  const prev=SYS[(n-2+SYS.length)%SYS.length], next=SYS[n%SYS.length];
+  info.innerHTML=`
+   <h2><small>System ${n} of ${SYS.length}</small>${s.name} system</h2>
+   <div class="block think"><p class="eyebrow">Think first</p><p class="q">${s.think[0]}</p><button class="btn ghost" type="button" id="revealBtn">Reveal the answer</button><p class="a" hidden id="thinkA">${s.think[1]}</p></div>
+   <div class="block"><h3>Function</h3><p class="lede">${s.func}</p></div>
+   <div class="block"><h3>Major organs</h3><div class="organs" id="organs">${s.parts.map((p,i)=>`<button type="button" class="organ${p[1]==null?' nodot':''}" data-part="${i}" aria-pressed="false">${p[0]}</button>`).join('')}</div><div class="organ-detail" id="organDetail" aria-live="polite">Choose an organ to find out what it does.${s.parts.some(p=>p[1]==null)?' Dashed names are not shown on the diagram.':''}</div></div>
+   <div class="block"><h3>How it works</h3><ol class="steps">${s.steps.map(t=>`<li><span>${t}</span></li>`).join('')}</ol></div>
+   ${s.extra?`<div class="block zoom"><h3>${s.extra==='arm'?'Zoom in: how muscles move bones':'Zoom in: a neuron sending an impulse'}</h3>${EXTRA[s.extra]}</div>`:''}
+   <div class="two"><div class="block note"><p class="eyebrow">Key idea</p><p>${s.tip}</p></div><div class="block note"><p class="eyebrow">Did you know?</p><p>${s.fact}</p></div></div>
+   <div class="block"><p class="eyebrow">Stretch challenge</p><p>${s.stretch}</p></div>
+   <div class="navrow"><button class="btn ghost" type="button" data-go="${prev.id}">← ${prev.name}</button><button class="btn" type="button" id="toOrg">Fill in my organiser</button><button class="btn ghost" type="button" data-go="${next.id}">${next.name} →</button></div>`;
+  info.querySelector('#revealBtn').onclick=e=>{document.getElementById('thinkA').hidden=false; e.target.hidden=true;};
+  info.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{selectSystem(b.dataset.go); document.getElementById('picker').scrollIntoView({behavior:'smooth',block:'start'});});
+  info.querySelector('#toOrg').onclick=()=>{showTab('organiser'); document.getElementById('organiser').scrollIntoView({block:'start'});};
+  applyMotion();
+}
+function showPart(i){
+  const s=byId[cur], p=s.parts[i];
+  document.querySelectorAll('#dia .hot').forEach(h=>h.classList.toggle('on',h.dataset.part==i));
+  document.querySelectorAll('#organs .organ').forEach(b=>b.setAttribute('aria-pressed',b.dataset.part==i));
+  document.getElementById('organDetail').innerHTML=`<b>${p[0]}.</b> ${p[3]}`;
+  document.getElementById('specCap').innerHTML= p[1]==null ? `<b>${p[0]}</b> is not drawn on this diagram.` : `You found the <b>${p[0].toLowerCase()}</b>.`;
+}
+document.getElementById('dia').addEventListener('click',e=>{const h=e.target.closest('.hot'); if(h) showPart(+h.dataset.part);});
+document.getElementById('dia').addEventListener('keydown',e=>{const h=e.target.closest('.hot'); if(h&&(e.key==='Enter'||e.key===' ')){e.preventDefault();showPart(+h.dataset.part);}});
+document.getElementById('info').addEventListener('click',e=>{const b=e.target.closest('.organ'); if(b) showPart(+b.dataset.part);});
+document.getElementById('pauseBtn').addEventListener('click',()=>{still=!still; applyMotion();});
+
+/* ---------- organiser ---------- */
+const SHORT={
+ circulatory:'Transports oxygen, nutrients and hormones around the body in the blood.',
+ muscular:'Moves the body by contracting and pulling on bones.',
+ digestive:'Breaks food down into small molecules that can be absorbed into the blood.',
+ skeletal:'Supports the body, protects organs and makes blood cells.',
+ nervous:'Sends fast electrical impulses to coordinate the body.',
+ excretory:'Removes waste made by cells, such as urea and carbon dioxide.',
+ respiratory:'Takes in oxygen and removes carbon dioxide by gas exchange.'
+};
+const TASK={
+ circulatory:{type:'mc'},
+ muscular:{type:'tf',items:[['Skeletal muscles can only pull, never push.',1],['Cardiac muscle is voluntary: you decide when your heart beats.',0],['Muscles are joined to bones by tendons.',1]]},
+ digestive:{type:'fill',text:'The digestive system breaks down {0} into small molecules. In the small intestine, {1} are absorbed into the {2}.',gaps:[['food','air','urine'],['nutrients','bones','hormones'],['blood','lungs','bladder']]},
+ skeletal:{type:'type'},
+ nervous:{type:'mc'},
+ excretory:{type:'tf',items:[['The kidneys filter the blood to make urine.',1],['Urine is stored in the stomach until it is emptied.',0],['The lungs excrete carbon dioxide when you breathe out.',1]]},
+ respiratory:{type:'fill',text:'Air travels down the {0} into the lungs. In the {1}, oxygen moves into the blood and {2} moves out.',gaps:[['trachea','oesophagus','spinal cord'],['alveoli','kidneys','villi'],['carbon dioxide','urea','bile']]}
+};
+const TASK_LABEL={mc:['Choose','Which sentence describes its function?'],tf:['True or false','Is each statement about this system true?'],fill:['Fill the gaps','Complete the sentence about its function.'],type:['Write it','Explain its function in your own words.']};
+const hash=str=>{let h=2166136261;for(const c of str){h^=c.charCodeAt(0);h=Math.imul(h,16777619);}return h>>>0;};
+const POOL=[...new Set(SYS.flatMap(s=>s.org.correct))];
+const CHIPS={}, MC={}, GAPS={};
+SYS.forEach(s=>{
+  const own=new Set([...s.org.correct,...(s.org.accept||[])]);
+  const cand=POOL.filter(o=>!own.has(o)).sort((a,b)=>hash(a+s.id)-hash(b+s.id));
+  CHIPS[s.id]=[...s.org.correct,...cand.slice(0,3)].sort((a,b)=>hash(s.id+a)-hash(s.id+b));
+  const others=SYS.filter(o=>o.id!==s.id).sort((a,b)=>hash(s.id+a.id)-hash(s.id+b.id)).slice(0,3).map(o=>SHORT[o.id]);
+  MC[s.id]=[SHORT[s.id],...others].sort((a,b)=>hash(a+s.id)-hash(b+s.id));
+  if(TASK[s.id].type==='fill') GAPS[s.id]=TASK[s.id].gaps.map((g,k)=>[...g].sort((a,b)=>hash(a+k)-hash(b+k)));
+});
+const NAMES=[...SYS].sort((a,b)=>a.name.localeCompare(b.name));
+const cardsEl=document.getElementById('cards');
+
+function taskBody(s){
+  const T=TASK[s.id];
+  if(T.type==='mc') return `<div class="mcq">${MC[s.id].map((o,k)=>`<button type="button" class="mco" data-mc="${k}">${o}</button>`).join('')}</div>`;
+  if(T.type==='tf') return T.items.map((it,i)=>`<div class="tf"><span>${it[0]}</span><div class="tfb"><button type="button" data-tf="${i}" data-v="1">True</button><button type="button" data-tf="${i}" data-v="0">False</button></div></div>`).join('');
+  if(T.type==='fill') return `<p class="fill">${T.text.replace(/\{(\d)\}/g,(_,k)=>`<select data-gap="${k}" aria-label="Gap ${+k+1}"><option value="">choose…</option>${GAPS[s.id][k].map(o=>`<option>${o}</option>`).join('')}</select>`)}</p>`;
+  return `<label for="fn-${s.id}" class="sr" hidden>Function</label><textarea id="fn-${s.id}" data-k="fn" rows="3" placeholder="Write one or two sentences…"></textarea>`;
+}
+function renderCards(){
+  cardsEl.innerHTML=SYS.map((s,i)=>{const T=TASK[s.id], L=TASK_LABEL[T.type]; return `
+  <article class="card" id="card-${s.id}" data-id="${s.id}">
+   <div class="card-top"><span class="fig">Figure ${i+1}</span><span class="pill" data-st></span></div>
+   <div class="mini">${svgFor(s.id,'m'+i,true)}</div>
+   <div class="qpart"><p class="qlab"><span class="qn">1</span>Name the system</p>
+    <select id="nm-${s.id}" data-k="name" aria-label="Name of the system in figure ${i+1}"><option value="">Choose…</option>${NAMES.map(o=>`<option value="${o.id}">${o.name} system</option>`).join('')}</select>
+    <p class="mini-fb" data-fb="name"></p></div>
+   <div class="qpart"><p class="qlab"><span class="qn">2</span>Tap its major organs <span class="cnt" data-cnt></span></p>
+    <div class="chips">${CHIPS[s.id].map(o=>`<button type="button" class="chip" data-o="${o}">${o}</button>`).join('')}</div>
+    <p class="mini-fb" data-fb="organs"></p></div>
+   <div class="qpart"><p class="qlab"><span class="qn">3</span>${L[1]} <span class="qtype">${L[0]}</span></p>${taskBody(s)}<p class="mini-fb" data-fb="fn"></p></div>
+   <div class="row"><button class="btn ghost" type="button" data-act="hint">Hint</button>${T.type==='type'?`<button class="btn" type="button" data-act="check">Check my answer</button><button class="btn ghost" type="button" data-act="model">Model answer</button>`:''}</div>
+   <div class="fb" aria-live="polite"></div>
+   <p class="model" hidden></p>
+  </article>`}).join('');
+  SYS.forEach(s=>{const c=state.cards[s.id], card=document.getElementById('card-'+s.id);
+    card.querySelector('[data-k=name]').value=c.name||'';
+    card.querySelectorAll('[data-gap]').forEach(g=>g.value=c.fill[g.dataset.gap]||'');
+    const ta=card.querySelector('textarea'); if(ta) ta.value=c.fn||'';
+    paint(s.id);});
+  applyMotion();
+}
+function fnDone(id){const T=TASK[id],c=state.cards[id];
+  if(T.type==='mc') return c.picks.some(k=>MC[id][k]===SHORT[id]);
+  if(T.type==='tf') return T.items.every((it,i)=>c.tf[i]===it[1]);
+  if(T.type==='fill') return T.gaps.every((g,k)=>c.fill[k]===g[0]);
+  return !!c.typedOK;}
+function isDone(id){const c=state.cards[id];return c.name===id && byId[id].org.correct.every(o=>c.found.includes(o)) && fnDone(id);}
+function started(id){const c=state.cards[id];return !!(c.name||c.found.length||c.wrong.length||c.picks.length||Object.keys(c.tf).length||Object.keys(c.fill).length||(c.fn||'').trim());}
+
+function paint(id){
+  const s=byId[id], c=state.cards[id], card=document.getElementById('card-'+id), T=TASK[id], done=isDone(id);
+  const sel=card.querySelector('[data-k=name]');
+  sel.classList.toggle('is-ok',c.name===id); sel.classList.toggle('is-bad',!!c.name&&c.name!==id);
+  card.querySelector('[data-fb=name]').innerHTML=!c.name?'':c.name===id?'<span class="ok">✓ Correct!</span>':'<span class="no">✗ Not quite. Look again at the organs in the picture.</span>';
+  card.querySelectorAll('.chip').forEach(x=>{const o=x.dataset.o,r=c.found.includes(o),w=c.wrong.includes(o);
+    x.classList.toggle('right',r); x.classList.toggle('wrong',w); x.disabled=r||w; x.setAttribute('aria-pressed',r||w);});
+  const need=s.org.correct.length, got=c.found.length;
+  card.querySelector('[data-cnt]').textContent=`${got}/${need} found`;
+  card.querySelector('[data-fb=organs]').innerHTML = got===need?'<span class="ok">✓ You found them all!</span>':(c.wrong.length?`<span class="no">${c.wrong.length} not part of this system (red).</span>`:'');
+  const ffb=card.querySelector('[data-fb=fn]'), fd=fnDone(id);
+  if(T.type==='mc'){
+    card.querySelectorAll('.mco').forEach(b=>{const k=+b.dataset.mc, picked=c.picks.includes(k), right=MC[id][k]===SHORT[id];
+      b.classList.toggle('right',picked&&right); b.classList.toggle('wrong',picked&&!right); b.disabled=picked||fd;});
+    ffb.innerHTML=fd?'<span class="ok">✓ Correct!</span>':(c.picks.length?'<span class="no">✗ Not that one. Try another.</span>':'');
+  } else if(T.type==='tf'){
+    card.querySelectorAll('[data-tf]').forEach(b=>{const i=+b.dataset.tf,v=+b.dataset.v,ch=c.tf[i]===v,ans=T.items[i][1];
+      b.classList.toggle('right',ch&&v===ans); b.classList.toggle('wrong',ch&&v!==ans); b.setAttribute('aria-pressed',ch);});
+    const ok=T.items.filter((it,i)=>c.tf[i]===it[1]).length, ans=Object.keys(c.tf).length;
+    ffb.innerHTML=fd?'<span class="ok">✓ All correct!</span>':(ans?`<span class="no">${ok}/${T.items.length} correct so far. Fix any red answers.</span>`:'');
+  } else if(T.type==='fill'){
+    card.querySelectorAll('[data-gap]').forEach(g=>{const k=+g.dataset.gap,v=c.fill[k]; g.classList.toggle('is-ok',!!v&&v===T.gaps[k][0]); g.classList.toggle('is-bad',!!v&&v!==T.gaps[k][0]);});
+    ffb.innerHTML=fd?'<span class="ok">✓ Perfect sentence!</span>':(Object.values(c.fill).some(v=>v)?'<span class="no">Fix any red gaps.</span>':'');
+  }
+  const pill=card.querySelector('[data-st]');
+  pill.textContent=done?'Done ✓':started(id)?'In progress':'Not started'; pill.className='pill '+(done?'ok':started(id)?'prog':'');
+  card.classList.toggle('done',done); card.style.setProperty('--sys',done?s.color:'var(--line)');
+  if(done) card.querySelector('.fb').innerHTML='<p class="y">✓ Figure complete. Great work!</p>';
+}
+function refreshProgress(){
+  const n=SYS.filter(s=>isDone(s.id)).length;
+  document.getElementById('orgCount').textContent=`${n}/${SYS.length}`;
+  document.getElementById('bar').style.width=(n/SYS.length*100)+'%';
+  document.getElementById('footMsg').textContent = n===SYS.length ? 'Every system complete. Brilliant work!' : '';
+}
+function update(id){save(); paint(id); refreshProgress(); scheduleSync();}
+
+renderCards(); refreshProgress();
+const nameIn=document.getElementById('studentName'); nameIn.value=state.student||'';
+nameIn.addEventListener('input',()=>{state.student=nameIn.value; save(); identityUI(); scheduleSync();});
+
+cardsEl.addEventListener('change',e=>{
+  const card=e.target.closest('.card'); if(!card) return; const id=card.dataset.id, c=state.cards[id];
+  if(e.target.dataset.k==='name'){c.name=e.target.value; if(c.name&&c.name!==id) c.miss=(c.miss||0)+1; update(id);}
+  else if(e.target.dataset.gap!=null){const k=e.target.dataset.gap; c.fill[k]=e.target.value; if(c.fill[k]&&c.fill[k]!==TASK[id].gaps[k][0]) c.miss=(c.miss||0)+1; update(id);}
+});
+cardsEl.addEventListener('input',e=>{
+  if(e.target.dataset.k!=='fn') return; const id=e.target.closest('.card').dataset.id, c=state.cards[id];
+  c.fn=e.target.value; if(c.typedOK){c.typedOK=false; update(id);} else save();
+});
+cardsEl.addEventListener('click',e=>{
+  const card=e.target.closest('.card'); if(!card) return; const id=card.dataset.id, c=state.cards[id], s=byId[id];
+  const chip=e.target.closest('.chip');
+  if(chip){const o=chip.dataset.o; if(s.org.correct.includes(o)||(s.org.accept||[]).includes(o)){ if(!c.found.includes(o)&&s.org.correct.includes(o)) c.found.push(o); else if(!s.org.correct.includes(o)) chip.disabled=true; } else if(!c.wrong.includes(o)){ c.wrong.push(o); c.miss=(c.miss||0)+1; } update(id); return;}
+  const mc=e.target.closest('.mco'); if(mc){const k=+mc.dataset.mc; if(!c.picks.includes(k)){ c.picks.push(k); if(MC[id][k]!==SHORT[id]) c.miss=(c.miss||0)+1; } update(id); return;}
+  const tf=e.target.closest('[data-tf]'); if(tf){const i=tf.dataset.tf; c.tf[i]=+tf.dataset.v; if(c.tf[i]!==TASK[id].items[i][1]) c.miss=(c.miss||0)+1; update(id); return;}
+  const act=e.target.closest('[data-act]')?.dataset.act; if(!act) return;
+  const fb=card.querySelector('.fb');
+  if(act==='hint'){fb.innerHTML=`<p class="h">Hint: ${s.hint}</p>`; return;}
+  if(act==='model'){const m=card.querySelector('.model');
+    if(c.name!==id){m.hidden=false; m.textContent='Name the system correctly first, then the model answer unlocks.'; return;}
+    m.hidden=!m.hidden; m.innerHTML=`<b>Model answer:</b> ${s.func}`; return;}
+  if(act==='check'){
+    const txt=(c.fn||'').toLowerCase(), words=txt.trim().split(/\s+/).filter(Boolean).length;
+    const hits=s.org.keys.filter(k=>new RegExp(k[1]).test(txt)), miss=s.org.keys.filter(k=>!hits.includes(k));
+    c.typedOK = words>=6 && hits.length>=2;
+    const ffb=card.querySelector('[data-fb=fn]');
+    if(words<6) ffb.innerHTML='<span class="no">Write a full sentence or two about what this system does.</span>';
+    else if(c.typedOK) ffb.innerHTML=`<span class="ok">✓ Good answer. You mentioned: ${hits.map(k=>k[0]).join(', ')}.</span>${miss.length?`<br><span style="font-weight:400">To go further, add: ${miss.map(k=>k[0]).join(', ')}.</span>`:''}`;
+    else ffb.innerHTML=`<span class="no">Add more detail. Think about: ${miss.map(k=>k[0]).join(', ')}.</span>`;
+    update(id);
+    if(!isDone(id)){ const parts=[]; if(c.name!==id) parts.push('name'); if(!s.org.correct.every(o=>c.found.includes(o))) parts.push('organs'); if(parts.length) fb.innerHTML=`<p class="h">Still to finish on this card: ${parts.join(' and ')}.</p>`; }
+  }
+});
+
+function fnText(id){const T=TASK[id],c=state.cards[id];
+  if(T.type==='mc') return fnDone(id)?SHORT[id]:'—';
+  if(T.type==='tf') return `${T.items.filter((it,i)=>c.tf[i]===it[1]).length}/${T.items.length} true/false correct`;
+  if(T.type==='fill') return T.text.replace(/\{(\d)\}/g,(_,k)=>c.fill[k]?c.fill[k].toUpperCase():'____');
+  return (c.fn||'').trim()||'—';}
+document.getElementById('copyBtn').addEventListener('click',()=>{
+  const lines=[`Systems of the Body organiser — ${state.student||'(no name)'}`,''];
+  SYS.forEach((s,i)=>{const c=state.cards[s.id]; lines.push(`Figure ${i+1}: ${c.name?byId[c.name].name+' system':'(not named)'}${isDone(s.id)?'  ✓':''}`, `Major organs: ${c.found.join(', ')||'—'}`, `Function: ${fnText(s.id)}`,'');});
+  const text=lines.join('\n'), box=document.getElementById('copyBox'), msg=document.getElementById('footMsg');
+  const fallback=()=>{box.hidden=false; box.value=text; box.focus(); box.select(); msg.textContent='Select all the text below and copy it.';};
+  try{ navigator.clipboard.writeText(text).then(()=>{msg.textContent='Copied. Paste it into your document or ManageBac.'; box.hidden=true;}).catch(fallback); }catch(e){ fallback(); }
+});
+let resetArmed=false, resetT;
+document.getElementById('resetBtn').addEventListener('click',e=>{
+  if(!resetArmed){ resetArmed=true; e.target.textContent='Tap again to clear everything'; resetT=setTimeout(()=>{resetArmed=false; e.target.textContent='Clear organiser';},3500); return; }
+  clearTimeout(resetT); resetArmed=false; e.target.textContent='Clear organiser';
+  SYS.forEach(s=>state.cards[s.id]=blankCard()); save(); renderCards(); refreshProgress(); scheduleSync();
+  document.getElementById('footMsg').textContent='Organiser cleared.';
+});
+
+/* ---------- quiz ---------- */
+const Q=[
+ ['Which system carries oxygen in the blood to every cell in your body?',['Respiratory','Circulatory','Digestive','Nervous'],1,'The heart pumps blood through arteries and capillaries to every cell. The respiratory system gets oxygen into the blood, but the circulatory system delivers it.'],
+ ['Alveoli are tiny air sacs. Which system are they part of?',['Circulatory','Respiratory','Digestive','Excretory'],1,'Alveoli are in the lungs, where oxygen enters the blood and carbon dioxide leaves it.'],
+ ['Which system makes red blood cells?',['Circulatory','Skeletal','Muscular','Digestive'],1,'Red and white blood cells are made in the bone marrow, inside large bones.'],
+ ['Bile breaks fat into small droplets. Which system is it part of?',['Excretory','Nervous','Digestive','Circulatory'],2,'Bile is made by the liver and stored in the gallbladder. It helps digest fats.'],
+ ['Tendons attach muscle to bone. Which system do tendons belong to?',['Skeletal','Nervous','Muscular','Respiratory'],2,'Tendons pass the pull of a muscle on to a bone. Ligaments (bone to bone) belong with the skeleton.'],
+ ['You pull your hand off a hot pan before you feel the pain. Which system controlled that?',['Muscular','Nervous','Skeletal','Digestive'],1,'That is a reflex: the impulse travels to the spinal cord and straight back to the muscle.'],
+ ['Kidneys remove urea from the blood. Which system are they in?',['Digestive','Circulatory','Excretory','Respiratory'],2,'The kidneys filter waste from the blood and make urine.'],
+ ['Sweat contains water, salts and a little urea. Which system’s job does sweating help with?',['Excretory','Digestive','Skeletal','Muscular'],0,'Removing urea and salts gets rid of waste, so sweating helps with excretion.'],
+ ['Villi in the small intestine absorb nutrients into the blood. Which system are they part of?',['Excretory','Digestive','Circulatory','Respiratory'],1,'The small intestine is where digested food is absorbed. Villi give it a huge surface area.'],
+ ['During a race, which two systems work most closely together to get more oxygen to your muscles?',['Digestive and muscular','Nervous and skeletal','Respiratory and circulatory','Excretory and skeletal'],2,'You breathe faster to take in more oxygen, and your heart beats faster to carry it to your muscles.'],
+ ['Which type of muscle squeezes food along your intestines without you thinking about it?',['Skeletal muscle','Cardiac muscle','Smooth muscle','Tendon'],2,'Smooth muscle is involuntary and lines organs such as the stomach and intestines.']
+];
+const quiz={started:false,order:[],i:0,score:0};
+const qBox=document.getElementById('quizBox');
+function startQuiz(){quiz.recorded=false; quiz.started=true; quiz.order=Q.map((_,i)=>i).sort(()=>Math.random()-.5); quiz.i=0; quiz.score=0; renderQ();}
+function renderQ(){
+  if(quiz.i>=quiz.order.length){
+    const pct=Math.round(quiz.score/Q.length*100);
+    if(!quiz.recorded){ quiz.recorded=true; const qs=state.quiz; qs.last=quiz.score; qs.attempts=(qs.attempts||0)+1; qs.best=Math.max(qs.best??0,quiz.score); qs.of=Q.length; save(); scheduleSync(true); }
+    const idOK=state.student.trim().length>1&&state.cls;
+    qBox.innerHTML=`<div class="qcard"><p class="eyebrow">Quick check complete</p><p class="score">${quiz.score}/${Q.length}</p><p>${pct>=80?'Excellent. You know your body systems well.':pct>=50?'Good start. Revisit the systems you missed in Explore, then try again.':'Go back to Explore and study each system, then have another go.'}</p><p class="quiz-note">${idOK?(ENDPOINT?'Your score has been sent to your teacher.':''):'Add your name and class on the Organiser tab so your teacher can see this score.'}</p><button class="btn" type="button" id="again">Try again</button></div>`;
+    document.getElementById('again').onclick=startQuiz; return;
+  }
+  const [q,opts,ans,ex]=Q[quiz.order[quiz.i]];
+  qBox.innerHTML=`<div class="qcard"><div class="qmeta"><span>Question ${quiz.i+1} of ${Q.length}</span><span>Score ${quiz.score}</span></div>
+   <p class="qtext">${q}</p><div class="opts">${opts.map((o,k)=>`<button class="opt" type="button" data-k="${k}">${o}</button>`).join('')}</div>
+   <p class="explain" hidden id="ex"></p><button class="btn" type="button" id="nextQ" hidden>${quiz.i+1===Q.length?'See my score':'Next question'}</button></div>`;
+  qBox.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{
+    const k=+b.dataset.k; qBox.querySelectorAll('.opt').forEach(x=>{x.disabled=true; if(+x.dataset.k===ans) x.classList.add('right');});
+    if(k===ans){quiz.score++;} else b.classList.add('wrong');
+    const e=document.getElementById('ex'); e.hidden=false; e.innerHTML=`<b>${k===ans?'Correct!':'Not quite.'}</b> ${ex}`;
+    const n=document.getElementById('nextQ'); n.hidden=false; n.focus();
+    n.onclick=()=>{quiz.i++; renderQ();};
+  });
+}
+
+/* ---------- class + teacher sync ---------- */
+const CLASSES=['9A','9B','9C','9D','9E'];
+const ENDPOINT=String(window.BSL_ENDPOINT||'').trim();
+if(!state.id){ state.id='s'+Date.now().toString(36)+Math.random().toString(36).slice(2,8); save(); }
+const classBox=document.getElementById('classPick');
+classBox.innerHTML=CLASSES.map(c=>`<button type="button" class="cls" role="radio" aria-checked="${state.cls===c}" data-c="${c}">${c}</button>`).join('');
+classBox.addEventListener('click',e=>{const b=e.target.closest('.cls'); if(!b) return; state.cls=b.dataset.c;
+  classBox.querySelectorAll('.cls').forEach(x=>x.setAttribute('aria-checked',x===b)); save(); identityUI(); scheduleSync(true);});
+const SYNC_TEXT={need:'Add your name and choose your class so your teacher can see your progress.',saving:'Saving…',saved:'✓ Progress sent to your teacher',error:'Could not reach your teacher’s sheet. Your work is safe here and will send again shortly.',local:'Your progress saves on this device.'};
+function setSync(st){const el=document.getElementById('sync'); el.dataset.st=st; el.textContent=SYNC_TEXT[st]||'';}
+function identityOK(){return state.student.trim().length>1 && CLASSES.includes(state.cls);}
+function identityUI(){ if(!identityOK()) setSync('need'); else if(!ENDPOINT) setSync('local'); else if(document.getElementById('sync').dataset.st==='need') setSync(''); }
+let syncT, retryT;
+function scheduleSync(soon){ clearTimeout(syncT); syncT=setTimeout(sendSync, soon?300:2500); }
+function payload(){
+  const systems={}; let done=0, mistakes=0;
+  SYS.forEach(s=>{const c=state.cards[s.id], d=isDone(s.id); if(d) done++; mistakes+=c.miss||0;
+    systems[s.id]={label:s.name,named:c.name===s.id,found:c.found.length,need:s.org.correct.length,wrongOrgans:c.wrong.slice(),fn:fnDone(s.id),fmt:TASK[s.id].type,mistakes:c.miss||0,done:d,started:started(s.id)};});
+  return {id:state.id,name:state.student.trim().slice(0,60),cls:state.cls,done,total:SYS.length,viewed:state.viewed.length,mistakes,quiz:state.quiz,systems};
+}
+async function sendSync(){
+  if(!identityOK()){ identityUI(); return; }
+  if(!ENDPOINT){ setSync('local'); return; }
+  setSync('saving'); clearTimeout(retryT);
+  try{
+    const r=await fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload())});
+    const j=await r.json().catch(()=>({ok:r.ok}));
+    if(j.ok) setSync('saved'); else throw new Error(j.error||'failed');
+  }catch(err){ setSync('error'); retryT=setTimeout(sendSync,20000); }
+}
+identityUI();
+
+/* ---------- boot ---------- */
+selectSystem(byId[state.last]?state.last:'circulatory');
+const h=(location.hash||'').slice(1); if(['organiser','quiz'].includes(h)) showTab(h);
+applyMotion();
+if(identityOK()) scheduleSync(true);
+</script>
+</body>
+</html>
